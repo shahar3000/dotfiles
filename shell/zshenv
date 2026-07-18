@@ -1,0 +1,57 @@
+# ~/.zshenv — portable (Linux-first, macOS-aware).
+# In .zshenv (not .zprofile) so PATH/env is set for ALL shells — including
+# non-login interactive shells, which Linux terminal emulators commonly spawn
+# and which do NOT source .zprofile. This makes brew/go/cargo tools reliably
+# visible to the detection blocks in .zshrc.
+
+# ---- Homebrew (macOS / Linuxbrew / user-local), first one present wins ----
+for _brew in \
+	/opt/homebrew/bin/brew \
+	/usr/local/bin/brew \
+	/home/linuxbrew/.linuxbrew/bin/brew \
+	"$HOME/.homebrew/bin/brew"; do          # user-local (no-sudo) install
+	if [ -x "$_brew" ]; then
+		eval "$("$_brew" shellenv)"
+		break
+	fi
+done
+unset _brew
+
+# ---- default editor for all shells + tools (git, crontab, etc.) ----
+# AFTER the brew shellenv loop so a brew-only nvim/vim is on PATH before we probe.
+# In zshenv (not zshrc) so non-interactive tools honor it too. Prefer nvim, then
+# vim, then vi, so any box still gets a usable editor.
+if command -v nvim >/dev/null 2>&1; then
+	export EDITOR="nvim" VISUAL="nvim"
+elif command -v vim >/dev/null 2>&1; then
+	export EDITOR="vim" VISUAL="vim"
+elif command -v vi >/dev/null 2>&1; then
+	export EDITOR="vi" VISUAL="vi"
+fi
+
+# ---- Go ----
+export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
+if command -v go >/dev/null 2>&1; then
+	export GOROOT="$(go env GOROOT)"
+fi
+export PATH="$PATH:${GOPATH}/bin"
+typeset -U path PATH   # keep PATH de-duplicated across re-sources (e.g. rezsh)
+
+# ---- Rust ----
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# ---- LLVM (brew) — compute the prefix ONCE (brew is a slow Ruby startup; this
+#      file is sourced by every shell incl. non-interactive `zsh -c`). ----
+if command -v brew >/dev/null 2>&1; then
+	_llvm="$(brew --prefix llvm 2>/dev/null)"
+	if [ -n "$_llvm" ] && [ -d "$_llvm" ]; then
+		export PATH="$_llvm/bin:$PATH"
+		export LDFLAGS="-L$_llvm/lib"
+		export CPPFLAGS="-I$_llvm/include"
+	fi
+	unset _llvm
+fi
+
+# ---- vimwiki markdown ----
+export VIMWIKI_MARKDOWN_EXTENSIONS='{"toc": {"baselevel": 2 }, "nl2br": {}}'

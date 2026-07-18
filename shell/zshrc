@@ -1,0 +1,101 @@
+# ~/.zshrc — interactive zsh config. Loader: zim. Prompt: starship.
+# Env/PATH (incl. EDITOR) lives in ~/.zshenv (sourced for all shells). Machine-
+# local overrides go in ~/.zshrc.local (untracked), sourced at the very end.
+
+# ---- history ----
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE INC_APPEND_HISTORY
+
+# ============================================================================
+# zim (plugin loader)
+# ============================================================================
+ZIM_HOME="${ZIM_HOME:-$HOME/.zim}"
+# Bootstrap zim if missing (install.sh also does this; guard here for safety).
+if [[ ! -e "$ZIM_HOME/zimfw.zsh" ]]; then
+	if command -v curl >/dev/null 2>&1; then
+		curl -fsSL --create-dirs -o "$ZIM_HOME/zimfw.zsh" \
+			https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh 2>/dev/null
+	fi
+fi
+if [[ -e "$ZIM_HOME/zimfw.zsh" ]]; then
+	# Rebuild init.zsh if the module list (~/.zimrc) is newer, or on first run.
+	if [[ ! "$ZIM_HOME/init.zsh" -nt "${ZDOTDIR:-$HOME}/.zimrc" ]]; then
+		source "$ZIM_HOME/zimfw.zsh" init -q
+	fi
+	source "$ZIM_HOME/init.zsh"
+fi
+
+# history-substring-search: bind ↑/↓. Bind BOTH the raw sequences (^[[A/^[[B)
+# AND the terminfo application-cursor keys (kcuu1/kcud1 = ^[OA/^[OB): zim's input
+# module enables application-cursor mode (smkx) on the line editor, so without the
+# terminfo binds ↑/↓ would emit ^[O* and miss these widgets.
+if (( $+widgets[history-substring-search-up] )); then
+	bindkey '^[[A' history-substring-search-up
+	bindkey '^[[B' history-substring-search-down
+	[[ -n "${terminfo[kcuu1]}" ]] && bindkey "${terminfo[kcuu1]}" history-substring-search-up
+	[[ -n "${terminfo[kcud1]}" ]] && bindkey "${terminfo[kcud1]}" history-substring-search-down
+fi
+
+# ============================================================================
+# prompt (starship — async, git-aware, fast even in big repos)
+# ============================================================================
+if command -v starship >/dev/null 2>&1; then
+	eval "$(starship init zsh)"
+fi
+
+# ============================================================================
+# tools & aliases
+# ============================================================================
+alias vim='nvim'
+alias rezsh="source ${HOME}/.zshenv; source ${HOME}/.zshrc"
+
+# eza (modern ls) if present, else plain ls
+if command -v eza &> /dev/null; then
+	alias ls="eza --color=always --git --icons=always --group-directories-first"
+	alias ll="eza --color=always --long --git --icons=always --group-directories-first"
+else
+	alias ll="ls -alF"
+fi
+
+# bat: Debian/Ubuntu ship the binary as 'batcat'; alias it back to 'bat'.
+if ! command -v bat &> /dev/null && command -v batcat &> /dev/null; then
+	alias bat="batcat"
+fi
+export BAT_THEME="Visual Studio Dark+"
+
+# zoxide — smart 'cd'. 'z foo' jumps to most-used dir matching foo; 'zi' fuzzy.
+if command -v zoxide >/dev/null 2>&1; then
+	eval "$(zoxide init zsh)"
+fi
+
+# ---- fzf: previews + keybindings ----
+export FZF_DEFAULT_OPTS="--bind=ctrl-d:preview-page-down,ctrl-u:preview-page-up"
+_bat="bat"; command -v bat >/dev/null 2>&1 || _bat="batcat"
+_show_preview="if [ -d {} ]; then (eza --tree --color=always {} 2>/dev/null || ls -la {}) | head -200; else $_bat -n --color=always --line-range :500 {} 2>/dev/null || cat {}; fi"
+export FZF_CTRL_T_OPTS="--preview '$_show_preview'"
+unset _bat _show_preview   # don't leak these helpers into the interactive namespace
+# fzf keybindings/completion — package installs don't create ~/.fzf.zsh.
+if command -v fzf >/dev/null 2>&1 && fzf --zsh >/dev/null 2>&1; then
+	source <(fzf --zsh)                                   # fzf >= 0.48
+elif [ -f ~/.fzf.zsh ]; then
+	source ~/.fzf.zsh                                     # fzf git installer
+elif [ -f /usr/share/fzf/key-bindings.zsh ]; then
+	source /usr/share/fzf/key-bindings.zsh                # Arch/Fedora
+	[ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh
+elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
+	source /usr/share/doc/fzf/examples/key-bindings.zsh   # Debian/Ubuntu
+	[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
+fi
+
+# fzf-tab preview for `cd`/files (uses eza/bat when available)
+if command -v eza >/dev/null 2>&1; then
+	zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --tree --color=always $realpath | head -200'
+fi
+
+# ---- helpers ----
+show_csv() { column -s, -t < "$1" | less; }
+
+# Machine-specific overrides (untracked)
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local

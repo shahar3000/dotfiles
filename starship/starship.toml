@@ -1,0 +1,76 @@
+# starship prompt — informative, Nerd Font icons, hostname only over SSH.
+# REQUIRES a Nerd Font in your terminal (CaskaydiaCove Nerd Font Mono); without
+# one the glyphs below show as tofu boxes. install.sh installs the font off-WSL;
+# on WSL set it in Windows Terminal (see README). To sanity-check glyphs render:
+#   echo "    "   (branch, folder, node, python, go)
+
+add_newline = true   # blank line before each prompt — easier to scan history
+
+format = """
+$username$hostname$directory$git_branch$git_status\
+$nodejs$python$golang$rust$c$java$ruby$package\
+$cmd_duration$line_break$character"""
+
+# ---- identity: only when it matters (SSH) ----
+[username]
+show_always = false          # hidden locally; shown when root or over SSH
+format = "[$user]($style)@"
+style_user = "yellow bold"
+
+[hostname]
+ssh_only = true              # only when connected via SSH
+format = "[$hostname]($style) "
+style = "green bold"
+
+# ---- directory ----
+[directory]
+style = "blue bold"
+truncation_length = 4
+truncate_to_repo = true
+read_only = " "             # nf-fa-lock
+
+# ---- git ----
+[git_branch]
+symbol = " "                # nf-fa-code_branch
+style = "purple bold"
+
+[git_status]
+style = "red"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+conflicted = " ${count}"
+untracked = "?${count}"
+modified = " ${count}"      # nf-fa-pencil
+staged = " ${count}"        # nf-fa-plus
+renamed = "»${count}"
+deleted = " ${count}"       # nf-fa-trash
+
+# ---- languages / tools: shown only in relevant projects, with logos ----
+[nodejs]
+symbol = " "                # nf-dev-nodejs_small
+[python]
+symbol = " "                # nf-dev-python
+[golang]
+symbol = " "                # nf-seti-go / go gopher
+[rust]
+symbol = " "                # nf-dev-rust
+[c]
+symbol = " "
+[java]
+symbol = " "
+[ruby]
+symbol = " "
+[package]
+symbol = "󰏗 "                # nf-md-package_variant
+disabled = true              # off by default (noisy); flip to false if you want it
+
+# ---- timing / status ----
+[cmd_duration]
+min_time = 2000
+format = "[ $duration]($style) "   # nf-fa-clock_o
+style = "yellow"
+
+[character]
+success_symbol = "[❯](green bold)"
+error_symbol = "[❯](red bold)"
