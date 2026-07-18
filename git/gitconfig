@@ -1,0 +1,54 @@
+# ~/.gitconfig — portable configuration + aliases only.
+# Set your identity locally (NOT tracked here):
+#   git config --global user.name  "Your Name"
+#   git config --global user.email "you@example.com"
+
+[merge]
+	conflictstyle = diff3
+[rerere]
+	enabled = 1
+[grep]
+	linenumber = true
+[fetch]
+	prune = true
+[rebase]
+	autostash = true
+[color]
+	ui = auto
+[core]
+	pager = delta
+	excludesfile = ~/.gitignore
+	# editor intentionally unset — git inherits $VISUAL/$EDITOR (set in ~/.zshenv
+	# with an nvim->vim->vi fallback), so there's one source of truth.
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true          # n / N to move between diff sections
+	line-numbers = true
+[push]
+	default = simple
+[init]
+	defaultBranch = main
+[log]
+	follow = true
+[diff]
+	algorithm = minimal
+[blame]
+	ignoreRevsFile = .git-blame-ignore-revs
+[alias]
+	dag = log --graph --format='format:%C(yellow)%h%C(reset) %C(blue)\"%an\" <%ae>%C(reset) %C(magenta)%cr%C(reset)%C(auto)%d%C(reset)%n%s' --date-order
+	l = log --format='format:%C(auto, yellow)%h%C(reset) %C(auto, magenta)%cd%C(reset)%C(auto)%d%C(reset) %s %C(auto, green)%an%C(reset)' --color=always --date=short
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)%an%Creset' --abbrev-commit --date=relative
+	st = status
+	co = checkout
+	br = branch
+	ci = commit
+	df = diff
+	dc = diff --cached
+	diff-side = -c delta.features=side-by-side diff
+	# rebase onto the remote's real default branch (main/master/…), not a hardcoded name.
+	# Falls back to main, then master, if origin/HEAD isn't set (mirrors, re-added remotes).
+	r = "!f() { git fetch origin; b=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'); [ -z \"$b\" ] && git rev-parse -q --verify origin/main >/dev/null && b=main; [ -z \"$b\" ] && b=master; git rebase \"origin/$b\"; }; f"
+
+# delta = syntax-highlighted git diffs (install: brew/apt install git-delta).
+# NOTE: package is 'git-delta' on brew and many distros; binary is 'delta'.
