@@ -1,0 +1,17 @@
+# vim/nvim runtime junk (never track these)
+plugged/
+autoload/plug.vim
+autoload/plug.vim.old
+viminfo
+viminfo.*
+.netrwhist
+*.backup
+*.backup.*
+
+# OS
+.DS_Store
+
+# machine-specific local overrides (these normally live in $HOME, not the repo;
+# listed here as a safety net in case any are created inside the tree)
+*.local
+.tmux.local.conf
