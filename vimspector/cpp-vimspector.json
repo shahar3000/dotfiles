@@ -1,0 +1,41 @@
+
+{
+	"configurations": {
+		"Launch": {
+			"adapter": "vscode-cpptools",
+			"configuration": {
+				"type": "cppdbg",
+				"request": "launch",
+				"cwd": "${workspaceRoot}",
+				"environment": [],
+				"stopAtEntry": true,
+				"MIMode": "gdb",
+				"comment_MIMode": "use 'lldb' on macOS",
+				"program": "test",
+				"args": []
+			}
+		},
+		"Attach": {
+			"adapter": "vscode-cpptools",
+			"configuration": {
+				"type": "cppdbg",
+				"request": "attach",
+				"MIMode": "gdb",
+				"comment_MIMode": "use 'lldb' on macOS",
+				"program": "test"
+			}
+		},
+		"Custom Attach": {
+			"adapter": "vscode-cpptools",
+			"configuration": {
+				"type": "cppdbg",
+				"request": "attach",
+				"attachCommand": [
+					"gdb",
+					"-p",
+					"${pid}"
+				]
+			}
+		}
+	}
+}

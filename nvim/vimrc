@@ -1,0 +1,387 @@
+" ============================================================================
+" vimrc — shared by vim (~/.vimrc) and nvim (~/.config/nvim/init.vim sources this)
+" Base: my original nvim config. Additions (marked [NEW]) adapted from
+" github.com/liralon/environment, all on the vim-plug + coc.nvim stack.
+" ============================================================================
+
+set nocompatible
+
+" Machine-specific settings live in ~/.vimrc.local (untracked, gitignored).
+" Sourced early so vars like g:vimwiki_path are set before they're used below.
+" e.g.  let g:vimwiki_path = '/home/me/notes/src'
+if filereadable(expand('~/.vimrc.local'))
+	source ~/.vimrc.local
+endif
+
+if !has('nvim')
+	" Only force a term when none is set — otherwise respect $TERM so tmux/screen
+	" sessions (screen-256color / tmux-256color) keep correct key handling.
+	if empty($TERM) | set term=xterm-256color | endif
+endif
+if has('termguicolors')
+	set termguicolors
+endif
+
+" ---- Clipboard: use the system clipboard (+ register) when available ----
+" unnamedplus = the '+' register (Ctrl-C/Ctrl-V clipboard on Linux/WSL).
+" Plain 'unnamed' is the '*' PRIMARY register — distinct on X11/Wayland.
+if has('unnamedplus')
+	set clipboard+=unnamedplus
+elseif has('clipboard')
+	set clipboard+=unnamed
+endif
+
+" ============================================================================
+" Plugins
+" ============================================================================
+call plug#begin('~/.vim/plugged')
+
+" Git
+Plug 'tpope/vim-fugitive'           " :Git, :Gvdiffsplit, :Git blame
+Plug 'jreybert/vimagit'             " magit-style staging/commit UI
+
+" Fuzzy find
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+
+" Navigation / UI
+Plug 'scrooloose/nerdtree'          " file tree
+Plug 'vim-airline/vim-airline'      " statusline (coc + git aware, auto-themed)
+Plug 'vim-airline/vim-airline-themes'
+Plug 'gruvbox-community/gruvbox'    " colorscheme (maintained fork of morhetz/gruvbox)
+Plug 'justinmk/vim-syntax-extra'    " better C syntax
+Plug 'ludovicchabant/vim-gutentags' " [NEW] auto-manage ctags in background
+Plug 'troydm/zoomwintab.vim'        " [NEW] fullscreen-toggle a split (like tmux prefix z)
+Plug 'wsdjeg/vim-fetch'             " [NEW] open file.c:42 -> jump to line 42
+Plug 'christoomey/vim-tmux-navigator' " [NEW] move across vim splits + tmux panes
+
+" Editing
+Plug 'tpope/vim-commentary'         " [NEW] gc to comment/uncomment
+Plug 'tpope/vim-sleuth'             " [NEW] auto-detect indentation per file
+
+" LSP / completion (coc). coc auto-installs these language servers on first launch:
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " [NEW] C++/Python/Go IDE
+
+" Debugging
+Plug 'puremourning/vimspector'      " [NEW] step-debugger for C++/Python/Go
+Plug 'rhysd/vim-clang-format'       " clang-format integration
+
+" Languages / folding
+Plug 'vim-utils/vim-ruby-fold'
+
+" Notes (vimwiki) + markdown
+Plug 'vimwiki/vimwiki'
+Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' } " [NEW] live md preview
+Plug 'bullets-vim/bullets.vim'      " [NEW] list/checkbox automation (scoped below, NOT in vimwiki)
+
+call plug#end()
+
+" ============================================================================
+" Colorscheme & appearance
+" ============================================================================
+set background=dark
+let g:gruvbox_contrast_dark = 'medium'
+try
+	colorscheme gruvbox
+catch /^Vim\%((\a\+)\)\=:E185/
+	colorscheme elflord
+endtry
+
+" airline: use gruvbox theme, show coc status + git branch, powerline symbols.
+let g:airline_theme = 'gruvbox'
+let g:airline#extensions#coc#enabled = 1
+let g:airline#extensions#branch#enabled = 1
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#formatter = 'unique_tail'
+" Powerline separators (the  triangle edges). Requires a Nerd Font in your
+" terminal (CaskaydiaCove Nerd Font Mono) — consistent with the starship prompt
+" and tmux powerline bar, which also need it. Set to 0 in ~/.vimrc.local on a
+" box without the font to avoid tofu.
+let g:airline_powerline_fonts = 1
+
+syntax on
+set switchbuf=useopen
+set nu
+set numberwidth=5
+set hlsearch
+set incsearch
+set backspace=indent,eol,start
+set ruler
+let mapleader = ","
+set laststatus=2
+" history/marks persistence: nvim calls it 'shada', vim calls it 'viminfo'
+if has('nvim')
+	set shada='100,<50,s10,h
+else
+	set viminfo='100,<50,s10,h
+endif
+set relativenumber
+set hidden
+set splitright
+set splitbelow
+set mmp=5000
+set mouse=
+set nobackup
+set nowritebackup
+set noswapfile
+set signcolumn=yes
+set updatetime=300                  " [NEW] snappier coc diagnostics (default 4000ms)
+set ignorecase                      " [NEW]
+set smartcase                       " [NEW] case-sensitive only if pattern has uppercase
+set scrolloff=5                     " [NEW] keep 5 lines of context around cursor
+
+" [NEW] persistent undo across sessions
+set undofile
+set undodir=~/.vim/undo
+if !isdirectory(expand('~/.vim/undo'))
+	call mkdir(expand('~/.vim/undo'), 'p', 0700)
+endif
+
+if has("autocmd")
+	filetype plugin indent on
+endif
+
+highlight ExtraSpaces ctermbg=gray ctermfg=white
+autocmd InsertEnter * match ExtraSpaces /\s\+\%#\@<!$/
+autocmd InsertLeave * match ExtraSpaces /\s\+$/
+hi Search cterm=NONE ctermfg=black ctermbg=lightgreen
+if &term =~ '256color'
+  set t_ut=
+endif
+set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
+
+" ============================================================================
+" coc.nvim — completion & LSP
+" ============================================================================
+inoremap <silent><expr> <TAB>
+      \ coc#pum#visible() ? coc#pum#next(1) :
+      \ CheckBackspace() ? "\<Tab>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
+                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+if has('nvim')
+  inoremap <silent><expr> <c-space> coc#refresh()
+else
+  inoremap <silent><expr> <c-@> coc#refresh()
+endif
+
+" (airline refreshes coc status automatically — no manual update hook needed)
+
+" [NEW] Diagnostic navigation: errors vs warnings separately
+nmap <silent> [e <Plug>(coc-diagnostic-prev-error)
+nmap <silent> ]e <Plug>(coc-diagnostic-next-error)
+nmap <silent> [w <Plug>(coc-diagnostic-prev)
+nmap <silent> ]w <Plug>(coc-diagnostic-next)
+" (kept my originals too)
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+" ---- [NEW] LSP go-to that integrates with vim's tagstack (Ctrl-O / Ctrl-I) ----
+function! TagstackPush(item)
+	let tagstack = gettagstack()
+	let curidx = tagstack['curidx']
+	let winid = winnr()
+	if curidx == (tagstack['length'] + 1)
+		call add(tagstack['items'], a:item)
+		let tagstack['length'] = curidx
+	else
+		let tagstack['items'][curidx-1] = a:item
+	endif
+	call settagstack(winid, tagstack, 'r')
+	call settagstack(winid, {'curidx' : curidx + 1})
+endfunction
+function! GotoTag(goto_kind)
+	let tag_name = expand('<cword>')
+	let curpos = getcurpos()
+	let curpos[0] = bufnr()
+	if CocAction('jump' . a:goto_kind)
+		let tagstack_item = {'tagname' : tag_name, 'from' : curpos}
+		call TagstackPush(tagstack_item)
+	endif
+endfunction
+
+" nvim 0.11+ ships default gr* LSP maps (grr/gri/grn/gra/grt). A bare `gr` map
+" then becomes an ambiguous prefix -> 1s timeout before coc-references fires.
+" Remove those defaults so `gr` is unambiguous. (vim has no such maps.)
+if has('nvim')
+	for s:k in ['grr','gri','grn','gra','grt']
+		silent! execute 'nunmap ' . s:k
+	endfor
+endif
+
+" GoTo navigation (my original mappings, now tagstack-aware where useful)
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gr <Plug>(coc-references)
+nmap <silent> gy <Plug>(coc-type-definition)
+" [NEW] tagstack-aware jumps — Ctrl-O / Ctrl-I history works after these.
+" Under ,x* so the ,d* prefix is free for the debugger (see vimspector below).
+nmap <silent> ,xd :call GotoTag("Definition")<CR>
+nmap <silent> ,xr :call GotoTag("References")<CR>
+nmap <silent> ,xi :call GotoTag("Implementation")<CR>
+" NOTE: no space before <Plug> — a literal space acts as 'l' and moves the
+" cursor off <cword> before the jump, landing on the wrong symbol.
+nmap <silent> g<space>d <C-W><C-V><Plug>(coc-definition)
+nmap <silent> g<space>r <C-W><C-V><Plug>(coc-references)
+nmap <silent> g<space>y <C-W><C-V><Plug>(coc-type-definition)
+nmap <silent> g<space>i <C-W><C-V><Plug>(coc-implementation)
+nmap <silent> g<space><space>d <C-W><C-S><Plug>(coc-definition)
+nmap <silent> g<space><space>r <C-W><C-S><Plug>(coc-references)
+nmap <silent> g<space><space>y <C-W><C-S><Plug>(coc-type-definition)
+nmap <silent> g<space><space>i <C-W><C-S><Plug>(coc-implementation)
+
+function! s:show_documentation()
+  if CocAction('hasProvider', 'hover')
+    call CocActionAsync('doHover')
+  else
+    call feedkeys('K', 'in')
+  endif
+endfunction
+nnoremap <silent> T :call <SID>show_documentation()<CR>
+
+nmap <leader>rn <Plug>(coc-rename)
+command! -nargs=0 Format :call CocAction('format')
+command! -nargs=? Fold :call CocAction('fold', <f-args>)
+command! -nargs=0 OR :call CocAction('runCommand', 'editor.action.organizeImport')
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+nnoremap <silent> <space>a :<C-u>CocList diagnostics<cr>
+nnoremap <silent> <space>e :<C-u>CocList extensions<cr>
+nnoremap <silent> <space>c :<C-u>CocList commands<cr>
+nnoremap <silent> <space>o :<C-u>CocList outline<cr>
+nnoremap <silent> <space>s :<C-u>CocList -I symbols<cr>
+nnoremap <silent> <space>j :<C-u>CocNext<CR>
+nnoremap <silent> <space>k :<C-u>CocPrev<CR>
+nnoremap <silent> <space>p :<C-u>CocListResume<CR>
+nnoremap <silent> <leader>qf  <Plug>(coc-fix-current)
+
+autocmd VimEnter * highlight link CocSemClass CocSemType
+autocmd VimEnter * highlight link CocSemStruct CocSemType
+autocmd VimEnter * highlight link CocSemMacro Macro
+autocmd VimEnter * highlight link CocSemEnumMember Constant
+
+" ============================================================================
+" [NEW] vimspector — debugging (<leader>d* mappings)
+" ============================================================================
+" Reads .vimspector.json from project root. Templates in dotfiles/vimspector/.
+" Under <leader>d* — NOT bare d*, which would shadow vim's delete operator
+" (diw/df/db/do etc.) globally. Leader-prefixed keeps the operator intact.
+nmap <leader>dc  <Plug>VimspectorContinue
+nmap <leader>ds  <Plug>VimspectorStop
+nmap <leader>dr  <Plug>VimspectorRestart
+nmap <leader>dp  <Plug>VimspectorPause
+nmap <leader>db  <Plug>VimspectorToggleBreakpoint
+nmap <leader>dB  <Plug>VimspectorToggleConditionalBreakpoint
+nmap <leader>df  <Plug>VimspectorAddFunctionBreakpoint
+nmap <leader>dn  <Plug>VimspectorStepOver
+nmap <leader>di  <Plug>VimspectorStepInto
+nmap <leader>do  <Plug>VimspectorStepOut
+nnoremap <leader>dq :VimspectorReset<CR>
+
+" ============================================================================
+" FZF
+" ============================================================================
+let g:fzf_layout = { 'down': '60%' }
+let $FZF_DEFAULT_OPTS="--preview-window 'right:55%'
+	\ --bind ctrl-y:preview-up,ctrl-e:preview-down,
+	\ctrl-b:preview-page-up,ctrl-f:preview-page-down,
+	\ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down,ctrl-p:toggle-preview"
+
+nmap <Leader>p :Files<CR>
+nmap <leader>b :Buffers<CR>
+nmap <leader>w :Windows<CR>
+nmap <leader>T :Tags<CR>
+nmap <leader>BT :BTags<CR>
+nmap <leader>C :Commits<CR>
+nmap <leader>BC :BCommits<CR>
+nmap <leader>L :Lines<CR>
+nmap <leader>BL :BLines<CR>
+" ,gl (was ,bl) — renamed so it doesn't prefix-shadow ,b (:Buffers) and cause lag
+nmap <leader>gl :BLines <C-R>=expand("<cword>")<CR><CR>
+
+command! -bang -nargs=* Rg
+  \ call fzf#vim#grep(
+  \   'rg --line-number --hidden --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
+  \   fzf#vim#with_preview(), <bang>0)
+command! -bang -nargs=* FGrep
+	\ call fzf#vim#grep(
+	\	'git grep --line-number --no-heading --color=always -- '.shellescape(<q-args>), 0,
+	\	fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
+
+nmap <F2> :call coc#float#close_all()<CR>
+nmap <F3> :Rg<CR>
+nmap <F4> :Rg <C-R>=expand("<cword>")<CR><CR>
+nmap <F5> :FGrep<CR>
+nmap <F6> :FGrep <C-R>=expand("<cword>")<CR><CR>
+" [NEW] F7 = toggle live markdown preview (markdown-preview.nvim)
+nmap <F7> <Plug>MarkdownPreviewToggle
+
+" ============================================================================
+" Window / navigation extras
+" ============================================================================
+" [NEW] zoomwintab — toggle current split to fullscreen (like tmux prefix z)
+noremap <silent> <C-w>z :ZoomWinTabToggle<CR>
+
+" [NEW] vim-tmux-navigator — Shift-arrows move across vim splits AND tmux panes
+let g:tmux_navigator_no_mappings = 1
+nnoremap <silent> <S-Left>  :TmuxNavigateLeft<cr>
+nnoremap <silent> <S-Right> :TmuxNavigateRight<cr>
+nnoremap <silent> <S-Down>  :TmuxNavigateDown<cr>
+nnoremap <silent> <S-Up>    :TmuxNavigateUp<cr>
+
+nmap <F8> :Gvdiffsplit<CR>
+" [NEW] F9 = format buffer (coc/LSP). Replaced manual ctags — vim-gutentags
+" now keeps the tags file fresh automatically (:GutentagsUpdate! for a manual run).
+nmap <F9> :Format<CR>
+function! NerdTreeToggle()
+	if empty(expand("%")) || g:NERDTree.IsOpen()
+		:NERDTreeToggle
+	else
+		:NERDTreeFind
+	endif
+endfunction
+nmap <F10> :call NerdTreeToggle()<CR>
+
+nmap gb :Git blame<CR>
+nmap gs :vertical G show<CR>
+
+" ============================================================================
+" clang-format
+" ============================================================================
+let g:clang_format#command = 'clang-format'   " (was hardcoded /usr/local/bin; use PATH)
+let g:clang_format#detect_style_file = 1
+nmap <Leader>F :ClangFormatAutoToggle<CR>
+
+" ============================================================================
+" vimwiki + markdown  (see CHEATSHEET.md 'Markdown/vimwiki' for the why)
+" ============================================================================
+" Wiki path is machine-specific — set via ~/.vimrc.local (sourced at top).
+" install.sh prompts for it. Default below is used if not overridden.
+if !exists('g:vimwiki_path') | let g:vimwiki_path = '~/vimwiki/src' | endif
+let g:vimwiki_list = [{
+	\ 'path': g:vimwiki_path,
+	\ 'syntax': 'markdown',
+	\ 'ext': '.md'}]
+
+" VERIFIED: vimwiki assigns filetype 'vimwiki' to .md files (tested). To let
+" markdown-preview fire on wiki files, register the markdown filetype too so
+" the combined filetype becomes 'vimwiki.markdown':
+let g:vimwiki_filetypes = ['markdown']
+
+" Folding is owned by vimwiki (NOT vim-markdown-folding, which would conflict).
+" 'expr' folds sections + code blocks; 'list' also folds list subitems but is
+" much slower on large files.
+let g:vimwiki_folding = 'expr'
+
+" bullets.vim: scope AWAY from vimwiki (which already does lists/checkboxes
+" natively) to avoid double-handling. Only active in plain markdown/text/commits.
+let g:bullets_enabled_file_types = ['markdown', 'text', 'gitcommit']
+
+let g:markdown_fenced_languages = ['bash', 'c', 'cpp', 'python', 'go', 'vim', 'json']
+
+filetype plugin on

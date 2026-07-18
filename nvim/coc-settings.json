@@ -1,0 +1,63 @@
+{
+	"go.checkForUpdates": "disabled",
+	"go": {
+		"disable": {
+			"workspaceFolders": false
+		},
+		"goplsPath": "gopls",
+		"goplsOptions": {
+			"verboseOutput": true,
+			"semanticTokens": true
+		},
+		"trace": {
+			"server": true
+		}
+	},
+	"coc-list-mappings-custom": true,
+	"list": {
+		"previewSplitRight": true
+	},
+	"python": {
+		"pythonPath": "python3"
+	},
+	"python.formatting.provider": "black",
+	"python.formatting.blackArgs": [
+		"--line-length=100"
+	],
+	"semanticTokens": {
+		"filetypes": [
+			"c",
+			"cpp",
+			"rust"
+		]
+	},
+	"clangd.arguments": [
+		"--background-index",
+		"--clang-tidy",
+		"--completion-style=detailed",
+		"--header-insertion=iwyu",
+		"--cross-file-rename",
+		"--query-driver=/usr/bin/gcc,/usr/bin/g++,/usr/bin/clang,/usr/bin/clang++",
+		"--enable-config",
+		"-j=8"
+	],
+	"solargraph.formatting": true,
+	"suggest.noselect": true,
+	"diagnostic.enableMessage": "always",
+	"diagnostic.level": "information",
+	"diagnostic.messageTarget": "float",
+	"coc.preferences.enableMessageDialog": true,
+	"rust-analyzer": {
+		"server.path": "rust-analyzer",
+		"checkOnSave.enable": true,
+		"checkOnSave.command": "check",
+		"procMacro.enable": true,
+		"cargo.loadOutDirsFromCheck": true,
+		"diagnostics.enable": true
+	},
+	"workspace.ignoredFolders": [
+		"$HOME",
+		"$HOME/.cargo/**",
+		"$HOME/.rustup/**"
+	]
+}

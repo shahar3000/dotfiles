@@ -1,0 +1,22 @@
+
+{
+	"configurations": {
+		"Launch": {
+			"adapter": "debugpy",
+			"configuration": {
+				"type": "python",
+				"request": "launch",
+				"python": "python3",
+				"cwd": "${workspaceRoot}",
+				"environment": [],
+				"breakpoints": {
+					"exception": { "caught": "N", "uncaught": "Y"}
+				},
+				"stopAtEntry": true,
+				"program": "test.py",
+				"args": []
+			}
+		}
+	}
+}
+
