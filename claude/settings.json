@@ -1,0 +1,14 @@
+{
+  "includeCoAuthoredBy": false,
+  "theme": "dark",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "clangd-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true
+  }
+}
