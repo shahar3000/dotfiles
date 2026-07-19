@@ -9,7 +9,7 @@ add_newline = true   # blank line before each prompt — easier to scan history
 format = """
 $username$hostname$directory$git_branch$git_status\
 $nodejs$python$golang$rust$c$java$ruby$package\
-$cmd_duration$line_break$character"""
+$cmd_duration$line_break$status$character"""
 
 # ---- identity: only when it matters (SSH) ----
 [username]
@@ -70,6 +70,20 @@ disabled = true              # off by default (noisy); flip to false if you want
 min_time = 2000
 format = "[ $duration]($style) "   # nf-fa-clock_o
 style = "yellow"
+
+# exit code of the last command — shown ONLY on failure (disabled by default).
+# Always shows the numeric code ($status); when the command was killed by a
+# signal, also appends the signal name ($signal_name; e.g. SEGV, KILL, INT):
+#   ✘ 1         (normal failure)
+#   ✘ 139 SEGV  (segfault: 139 = 128+11, signalled)
+[status]
+disabled = false
+symbol = "✘ "
+format = "[$symbol$status( $signal_name)]($style) "
+style = "red bold"
+# $signal_name is populated by recognize_signal_code (default true); map_symbol is
+# intentionally left off (default false) so our ✘ symbol is used for ALL failures
+# instead of starship's default emoji (🔍/⚡) for 127/signals.
 
 [character]
 success_symbol = "[❯](green bold)"
