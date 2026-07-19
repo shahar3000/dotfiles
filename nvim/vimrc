@@ -18,8 +18,16 @@ if !has('nvim')
 	" sessions (screen-256color / tmux-256color) keep correct key handling.
 	if empty($TERM) | set term=xterm-256color | endif
 endif
+" Enable 24-bit color ONLY when the terminal genuinely supports it. Blindly
+" setting termguicolors on a 256-color terminal (e.g. macOS Terminal.app, or an
+" SSH hop that dropped $COLORTERM) crushes gruvbox's hex into muddy 256-color
+" approximations. Without termguicolors, gruvbox uses its proper 256-color
+" palette, which is designed to look good. $COLORTERM=truecolor/24bit is the
+" signal; tmux/screen with RGB caps also qualifies.
 if has('termguicolors')
-	set termguicolors
+	if $COLORTERM ==# 'truecolor' || $COLORTERM ==# '24bit'
+		set termguicolors
+	endif
 endif
 
 " ---- Clipboard: use the system clipboard (+ register) when available ----
