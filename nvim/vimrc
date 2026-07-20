@@ -1,7 +1,6 @@
 " ============================================================================
 " vimrc — shared by vim (~/.vimrc) and nvim (~/.config/nvim/init.vim sources this)
-" Base: my original nvim config. Additions (marked [NEW]) adapted from
-" github.com/liralon/environment, all on the vim-plug + coc.nvim stack.
+" vim-plug + coc.nvim stack. Some additions adapted from github.com/liralon/environment.
 " ============================================================================
 
 set nocompatible
@@ -58,21 +57,21 @@ Plug 'vim-airline/vim-airline'      " statusline (coc + git aware, auto-themed)
 Plug 'vim-airline/vim-airline-themes'
 Plug 'gruvbox-community/gruvbox'    " colorscheme (maintained fork of morhetz/gruvbox)
 Plug 'justinmk/vim-syntax-extra'    " better C syntax
-Plug 'ludovicchabant/vim-gutentags' " [NEW] auto-manage ctags in background
-Plug 'troydm/zoomwintab.vim'        " [NEW] fullscreen-toggle a split (like tmux prefix z)
-Plug 'wsdjeg/vim-fetch'             " [NEW] open file.c:42 -> jump to line 42
-Plug 'christoomey/vim-tmux-navigator' " [NEW] move across vim splits + tmux panes
+Plug 'ludovicchabant/vim-gutentags' " auto-manage ctags in background
+Plug 'troydm/zoomwintab.vim'        " fullscreen-toggle a split (like tmux prefix z)
+Plug 'wsdjeg/vim-fetch'             " open file.c:42 -> jump to line 42
+Plug 'christoomey/vim-tmux-navigator' " move across vim splits + tmux panes
 
 " Editing
-Plug 'tpope/vim-commentary'         " [NEW] gc to comment/uncomment
-Plug 'tpope/vim-sleuth'             " [NEW] auto-detect indentation per file
+Plug 'tpope/vim-commentary'         " gc to comment/uncomment
+Plug 'tpope/vim-sleuth'             " auto-detect indentation per file
 
 " LSP / completion (coc). coc auto-installs these language servers on first launch:
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " [NEW] C++/Python/Go IDE
+let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " C++/Python/Go IDE
 
 " Debugging
-Plug 'puremourning/vimspector'      " [NEW] step-debugger for C++/Python/Go
+Plug 'puremourning/vimspector'      " step-debugger for C++/Python/Go
 Plug 'rhysd/vim-clang-format'       " clang-format integration
 
 " Languages / folding
@@ -80,8 +79,8 @@ Plug 'vim-utils/vim-ruby-fold'
 
 " Notes (vimwiki) + markdown
 Plug 'vimwiki/vimwiki'
-Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' } " [NEW] live md preview
-Plug 'bullets-vim/bullets.vim'      " [NEW] list/checkbox automation (scoped below, NOT in vimwiki)
+Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' } " live md preview
+Plug 'bullets-vim/bullets.vim'      " list/checkbox automation (scoped below, NOT in vimwiki)
 
 call plug#end()
 
@@ -102,8 +101,8 @@ let g:airline#extensions#coc#enabled = 1
 let g:airline#extensions#branch#enabled = 1
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#formatter = 'unique_tail'
-" Powerline separators (the  triangle edges). Requires a Nerd Font in your
-" terminal (CaskaydiaCove Nerd Font Mono) — consistent with the starship prompt
+" Powerline separators (the triangle edges). Requires a Nerd Font in your
+" terminal (JetBrainsMono Nerd Font Mono) — consistent with the starship prompt
 " and tmux powerline bar, which also need it. Set to 0 in ~/.vimrc.local on a
 " box without the font to avoid tofu.
 let g:airline_powerline_fonts = 1
@@ -134,12 +133,12 @@ set nobackup
 set nowritebackup
 set noswapfile
 set signcolumn=yes
-set updatetime=300                  " [NEW] snappier coc diagnostics (default 4000ms)
-set ignorecase                      " [NEW]
-set smartcase                       " [NEW] case-sensitive only if pattern has uppercase
-set scrolloff=5                     " [NEW] keep 5 lines of context around cursor
+set updatetime=300                  " snappier coc diagnostics (default 4000ms)
+set ignorecase
+set smartcase                       " case-sensitive only if pattern has uppercase
+set scrolloff=5                     " keep 5 lines of context around cursor
 
-" [NEW] persistent undo across sessions
+" persistent undo across sessions
 set undofile
 set undodir=~/.vim/undo
 if !isdirectory(expand('~/.vim/undo'))
@@ -181,7 +180,7 @@ endif
 
 " (airline refreshes coc status automatically — no manual update hook needed)
 
-" [NEW] Diagnostic navigation: errors vs warnings separately
+" Diagnostic navigation: errors vs warnings separately
 nmap <silent> [e <Plug>(coc-diagnostic-prev-error)
 nmap <silent> ]e <Plug>(coc-diagnostic-next-error)
 nmap <silent> [w <Plug>(coc-diagnostic-prev)
@@ -190,7 +189,7 @@ nmap <silent> ]w <Plug>(coc-diagnostic-next)
 nmap <silent> [g <Plug>(coc-diagnostic-prev)
 nmap <silent> ]g <Plug>(coc-diagnostic-next)
 
-" ---- [NEW] LSP go-to that integrates with vim's tagstack (Ctrl-O / Ctrl-I) ----
+" ---- LSP go-to that integrates with vim's tagstack (Ctrl-O / Ctrl-I) ----
 function! TagstackPush(item)
 	let tagstack = gettagstack()
 	let curidx = tagstack['curidx']
@@ -227,7 +226,7 @@ endif
 nmap <silent> gd <Plug>(coc-definition)
 nmap <silent> gr <Plug>(coc-references)
 nmap <silent> gy <Plug>(coc-type-definition)
-" [NEW] tagstack-aware jumps — Ctrl-O / Ctrl-I history works after these.
+" tagstack-aware jumps — Ctrl-O / Ctrl-I history works after these.
 " Under ,x* so the ,d* prefix is free for the debugger (see vimspector below).
 nmap <silent> ,xd :call GotoTag("Definition")<CR>
 nmap <silent> ,xr :call GotoTag("References")<CR>
@@ -274,7 +273,7 @@ autocmd VimEnter * highlight link CocSemMacro Macro
 autocmd VimEnter * highlight link CocSemEnumMember Constant
 
 " ============================================================================
-" [NEW] vimspector — debugging (<leader>d* mappings)
+" vimspector — debugging (<leader>d* mappings)
 " ============================================================================
 " Reads .vimspector.json from project root. Templates in dotfiles/vimspector/.
 " Under <leader>d* — NOT bare d*, which would shadow vim's delete operator
@@ -326,16 +325,16 @@ nmap <F3> :Rg<CR>
 nmap <F4> :Rg <C-R>=expand("<cword>")<CR><CR>
 nmap <F5> :FGrep<CR>
 nmap <F6> :FGrep <C-R>=expand("<cword>")<CR><CR>
-" [NEW] F7 = toggle live markdown preview (markdown-preview.nvim)
+" F7 = toggle live markdown preview (markdown-preview.nvim)
 nmap <F7> <Plug>MarkdownPreviewToggle
 
 " ============================================================================
 " Window / navigation extras
 " ============================================================================
-" [NEW] zoomwintab — toggle current split to fullscreen (like tmux prefix z)
+" zoomwintab — toggle current split to fullscreen (like tmux prefix z)
 noremap <silent> <C-w>z :ZoomWinTabToggle<CR>
 
-" [NEW] vim-tmux-navigator — Shift-arrows move across vim splits AND tmux panes
+" vim-tmux-navigator — Shift-arrows move across vim splits AND tmux panes
 let g:tmux_navigator_no_mappings = 1
 nnoremap <silent> <S-Left>  :TmuxNavigateLeft<cr>
 nnoremap <silent> <S-Right> :TmuxNavigateRight<cr>
@@ -343,7 +342,7 @@ nnoremap <silent> <S-Down>  :TmuxNavigateDown<cr>
 nnoremap <silent> <S-Up>    :TmuxNavigateUp<cr>
 
 nmap <F8> :Gvdiffsplit<CR>
-" [NEW] F9 = format buffer (coc/LSP). Replaced manual ctags — vim-gutentags
+" F9 = format buffer (coc/LSP). Replaced manual ctags — vim-gutentags
 " now keeps the tags file fresh automatically (:GutentagsUpdate! for a manual run).
 nmap <F9> :Format<CR>
 function! NerdTreeToggle()
