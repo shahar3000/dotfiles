@@ -37,14 +37,13 @@ On first `nvim` launch, coc auto-installs `coc-clangd`/`coc-pyright`/`coc-go`.
 
 The starship prompt, vim-airline, and the tmux status line all use **Nerd Font
 glyphs** (git-branch icons, language logos, powerline triangle separators). You
-need **CaskaydiaCove Nerd Font Mono** set in your terminal — the Nerd Font-patched
-build of Cascadia Code (Microsoft's Consolas-style coding font); strict monospace,
-no ligatures. Without it those glyphs show as tofu boxes (the configs still work,
-they just look wrong).
+need **JetBrainsMono Nerd Font Mono** set in your terminal — a clean, highly
+readable monospace coding font (Nerd Font-patched). Without it those glyphs show
+as tofu boxes (the configs still work, they just look wrong).
 
 - **macOS / native Linux desktop** — `install.sh` installs the font automatically
   (brew cask on macOS; `~/.local/share/fonts` + `fc-cache` on Linux). Then set
-  your terminal's font to `CaskaydiaCove Nerd Font Mono`.
+  your terminal's font to `JetBrainsMono Nerd Font Mono`.
 
 ### Nerd Font on WSL / Windows Terminal
 
@@ -52,12 +51,13 @@ In WSL the font lives on **Windows**, not inside Linux — `install.sh` can't se
 it, so do this once on Windows:
 
 1. Install the font (either):
-   - `winget install --id DEVCOM.NerdFonts.CascadiaCode`, **or**
-   - download `CascadiaCode.zip` from
+   - download `JetBrainsMono.zip` from
      <https://github.com/ryanoasis/nerd-fonts/releases/latest>, extract, select
-     the `CaskaydiaCoveNerdFontMono-*.ttf` files → right-click → **Install**.
+     the `JetBrainsMonoNerdFontMono-*.ttf` files → right-click → **Install**, **or**
+   - `winget search JetBrainsMono` (look for the Nerd Font entry) then
+     `winget install --id <that id>`.
 2. Windows Terminal → `Ctrl+,` → your WSL profile → **Appearance** →
-   **Font face** → `CaskaydiaCove Nerd Font Mono`.
+   **Font face** → `JetBrainsMono Nerd Font Mono`.
 
 Until then everything still works — you'll just see tofu boxes where icons/
 triangle separators should be.

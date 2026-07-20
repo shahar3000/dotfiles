@@ -277,11 +277,11 @@ install_tools() {
 }
 
 # ---------------------------------------------------------------------------
-# 3b. CaskaydiaCove Nerd Font (Consolas-successor, strict-monospace 'Mono' face).
-#     Handles all NON-WSL cases; WSL prints a pointer to the README (font must
-#     be installed on Windows, not inside WSL).
+# 3b. JetBrainsMono Nerd Font (strict-monospace 'Mono' face) for prompt/tmux/
+#     airline glyphs. Handles all NON-WSL cases; WSL prints a pointer to the
+#     README (font must be installed on Windows, not inside WSL).
 # ---------------------------------------------------------------------------
-FONT_FAMILY="CaskaydiaCove Nerd Font Mono"
+FONT_FAMILY="JetBrainsMono Nerd Font Mono"
 install_font() {
 	[ "${SKIP_PACKAGES:-0}" = "1" ] && return
 	if [ "$IS_WSL" = "1" ]; then
@@ -290,11 +290,11 @@ install_font() {
 		return
 	fi
 	if [ "$OS" = "macos" ]; then
-		if brew list --cask font-caskaydia-cove-nerd-font >/dev/null 2>&1; then
+		if brew list --cask font-jetbrains-mono-nerd-font >/dev/null 2>&1; then
 			info "Nerd Font present (brew cask)"
 		else
 			info "installing Nerd Font (brew cask)"
-			brew install -y --cask font-caskaydia-cove-nerd-font || warn "font cask install failed"
+			brew install -y --cask font-jetbrains-mono-nerd-font || warn "font cask install failed"
 		fi
 		warn "Set your terminal font to '$FONT_FAMILY' (Terminal/iTerm settings)."
 		return
@@ -302,16 +302,16 @@ install_font() {
 	# native Linux desktop: drop the Mono ttfs into the user font dir + refresh cache
 	have unzip || { warn "unzip missing — cannot install font (add it via your package manager)"; return; }
 	local fdir="$HOME/.local/share/fonts"
-	if ls "$fdir"/CaskaydiaCoveNerdFontMono-*.ttf >/dev/null 2>&1; then
+	if ls "$fdir"/JetBrainsMonoNerdFontMono-*.ttf >/dev/null 2>&1; then
 		info "Nerd Font present ($fdir)"
 	else
-		info "installing CaskaydiaCove Nerd Font -> $fdir"
+		info "installing JetBrainsMono Nerd Font -> $fdir"
 		local tmp; tmp="$(mktemp -d)"
-		if curl -fsSL -o "$tmp/CascadiaCode.zip" \
-			https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.zip; then
+		if curl -fsSL -o "$tmp/JetBrainsMono.zip" \
+			https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip; then
 			mkdir -p "$fdir"
-			# extract only the strict-monospace Mono faces
-			( cd "$tmp" && unzip -oq CascadiaCode.zip 'CaskaydiaCoveNerdFontMono-*.ttf' -d "$fdir" ) \
+			# extract only the strict-monospace Mono faces (not the NL/Propo variants)
+			( cd "$tmp" && unzip -oq JetBrainsMono.zip 'JetBrainsMonoNerdFontMono-*.ttf' -d "$fdir" ) \
 				|| warn "font unzip failed"
 			have fc-cache && fc-cache -f "$fdir" >/dev/null 2>&1
 			info "installed; set your terminal font to '$FONT_FAMILY'"
