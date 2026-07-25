@@ -64,6 +64,10 @@ it, so do this once on Windows:
 Until then everything still works — you'll just see tofu boxes where icons/
 triangle separators should be.
 
+> On a Windows host, `windows-terminal/settings.json` sets the font, a matching
+> gruvbox scheme, true color, and WSL+SSH profiles in one go — see
+> [`windows-terminal/README.md`](windows-terminal/README.md).
+
 ## Layout
 
 | Path | Purpose |
@@ -80,6 +84,7 @@ triangle separators should be.
 | `herdr/config.toml` | herdr (agent multiplexer) config — gruvbox theme, tmux-like keys (symlinked to `~/.config/herdr/config.toml`) |
 | `git/gitconfig` | git config + delta |
 | `git/gitignore_global` | global gitignore (symlinked to `~/.gitignore` via `core.excludesfile`) — tags, editor/OS cruft |
+| `windows-terminal/settings.json` | Windows Terminal config (gruvbox scheme, JetBrainsMono, WSL+SSH profiles) — **copy-in, not symlinked**; see `windows-terminal/README.md` |
 | `claude/settings.json` | Claude Code settings (portable subset; use your own Anthropic account) |
 | `claude/statusline.sh` | custom statusline (symlinked to `~/.claude/statusline.sh`; needs `jq`) |
 | `CHEATSHEET.md` | keybindings per tool |

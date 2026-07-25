@@ -1,0 +1,121 @@
+// ============================================================================
+// Windows Terminal config for this dotfiles setup.
+//
+// Windows Terminal reads JSONC (these // comments are fine). This is a REFERENCE
+// file — it CANNOT be symlinked from install.sh (that runs inside Linux/WSL and
+// can't reach the Windows path). Copy or merge it into:
+//   %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json
+// See windows-terminal/README.md for exact steps.
+//
+// What it does: JetBrainsMono Nerd Font, a gruvbox-dark scheme, forces
+// COLORTERM=truecolor, and adds WSL + SSH profiles. Everything INSIDE the
+// remote/WSL Linux (zsh/tmux/nvim/starship) is handled by install.sh.
+// ============================================================================
+{
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+
+    "defaultProfile": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+    "copyOnSelect": false,
+    "copyFormatting": "none",
+    "startOnUserLogin": false,
+    "initialCols": 120,
+    "initialRows": 32,
+
+    "profiles": {
+        // Applies to every profile unless overridden in the list below.
+        "defaults": {
+            "colorScheme": "Gruvbox Dark",
+            "font": {
+                "face": "JetBrainsMono Nerd Font Mono",
+                "size": 11
+            },
+            "cursorShape": "bar",
+            "padding": "6",
+            "scrollbarState": "visible",
+            "historySize": 50000,
+            "antialiasingMode": "grayscale",
+            "snapOnInput": true,
+            "closeOnExit": "graceful"
+        },
+
+        "list": [
+            {
+                // WSL2 Ubuntu — local Linux; run ~/dotfiles/install.sh once inside it.
+                // COLORTERM guarantees nvim's truecolor guard engages even if a
+                // login step drops it. This GUID is the standard one WSL Ubuntu
+                // generates; if yours differs, copy the guid Windows Terminal made
+                // for your Ubuntu profile and reuse it here (and in defaultProfile).
+                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+                "name": "Ubuntu (WSL)",
+                "source": "Windows.Terminal.Wsl",
+                "startingDirectory": "//wsl$/Ubuntu/home",
+                "environment": {
+                    "COLORTERM": "truecolor",
+                    "TERM": "xterm-256color"
+                }
+            },
+            {
+                // SSH to the remote dev desk. Change `ssh dev-desk` to your host
+                // (or an ssh config alias). tmux+nvim run remotely — this profile
+                // is only the rendering client.
+                "guid": "{b1e5a0d2-7c3f-4e9a-9d21-000000000001}",
+                "name": "dev desk (ssh)",
+                "commandline": "ssh dev-desk",
+                "environment": {
+                    "COLORTERM": "truecolor"
+                }
+            },
+            {
+                // Plain PowerShell, kept for Windows-side tasks. Uses the default
+                // Campbell scheme (gruvbox is for the Linux shells); font stays.
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+                "colorScheme": "Campbell",
+                "hidden": false
+            }
+        ]
+    },
+
+    "schemes": [
+        {
+            // gruvbox dark — matches nvim (gruvbox-community), tmux, starship, herdr.
+            // The 16 ANSI entries matter even with true color: plain-ANSI output
+            // (ls, git without delta, shell) uses this palette, not truecolor hexes.
+            "name": "Gruvbox Dark",
+            "background": "#282828",
+            "foreground": "#EBDBB2",
+            "cursorColor": "#EBDBB2",
+            "selectionBackground": "#504945",
+
+            "black":         "#282828",
+            "red":           "#CC241D",
+            "green":         "#98971A",
+            "yellow":        "#D79921",
+            "blue":          "#458588",
+            "purple":        "#B16286",
+            "cyan":          "#689D6A",
+            "white":         "#A89984",
+
+            "brightBlack":   "#928374",
+            "brightRed":     "#FB4934",
+            "brightGreen":   "#B8BB26",
+            "brightYellow":  "#FABD2F",
+            "brightBlue":    "#83A598",
+            "brightPurple":  "#D3869B",
+            "brightCyan":    "#8EC07C",
+            "brightWhite":   "#EBDBB2"
+        }
+    ],
+
+    // Keybindings kept minimal so they don't fight tmux running inside a pane.
+    // Windows-side chords all use ctrl+shift+* (tmux/zsh use ctrl+* and the
+    // ctrl+b prefix), so there's no collision.
+    "actions": [
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
+        { "command": "paste", "keys": "ctrl+shift+v" },
+        { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": { "action": "splitPane", "split": "auto", "splitMode": "duplicate" }, "keys": "alt+shift+d" },
+        { "command": { "action": "newTab" }, "keys": "ctrl+shift+t" }
+    ]
+}
