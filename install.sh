@@ -522,6 +522,7 @@ link_configs() {
 	link "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
 	link "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
 	link "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
+	link "$DOTFILES/git/gitignore_global"    "$HOME/.gitignore"   # global gitignore (gitconfig core.excludesfile)
 	link "$DOTFILES/git/gitconfig"           "$HOME/.gitconfig"
 	link "$DOTFILES/claude/settings.json"    "$HOME/.claude/settings.json"
 	link "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"

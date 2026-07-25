@@ -77,6 +77,7 @@ triangle separators should be.
 | `tmux/tmux.conf` | tmux config |
 | `herdr/config.toml` | herdr (agent multiplexer) config — gruvbox theme, tmux-like keys (symlinked to `~/.config/herdr/config.toml`) |
 | `git/gitconfig` | git config + delta |
+| `git/gitignore_global` | global gitignore (symlinked to `~/.gitignore` via `core.excludesfile`) — tags, editor/OS cruft |
 | `claude/settings.json` | Claude Code settings (portable subset; use your own Anthropic account) |
 | `claude/statusline.sh` | custom statusline (symlinked to `~/.claude/statusline.sh`; needs `jq`) |
 | `CHEATSHEET.md` | keybindings per tool |

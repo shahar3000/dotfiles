@@ -85,6 +85,17 @@ Plug 'bullets-vim/bullets.vim'      " list/checkbox automation (scoped below, NO
 call plug#end()
 
 " ============================================================================
+" gutentags — keep tag files OUT of project repos
+" ============================================================================
+" Store all generated tags in a central cache dir instead of writing a 'tags'
+" file into every repo root (which would clutter git status / risk being
+" committed). Nothing to .gitignore per-project this way.
+let g:gutentags_cache_dir = expand('~/.cache/gutentags')
+if !isdirectory(expand('~/.cache/gutentags'))
+	call mkdir(expand('~/.cache/gutentags'), 'p', 0700)
+endif
+
+" ============================================================================
 " Colorscheme & appearance
 " ============================================================================
 set background=dark

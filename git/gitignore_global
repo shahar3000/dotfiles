@@ -1,0 +1,24 @@
+# Global gitignore — applied to EVERY repo via core.excludesfile (~/.gitignore).
+# For personal/tool artifacts that should never be committed in any project,
+# without editing each project's tracked .gitignore.
+
+# ctags / gutentags (gutentags is also configured to use a cache dir, so this
+# is belt-and-suspenders for any tool that still drops a tags file in a repo)
+tags
+tags.lock
+tags.temp
+.tags
+
+# vim / nvim editor cruft
+*.swp
+*.swo
+*~
+.netrwhist
+Session.vim
+
+# OS
+.DS_Store
+Thumbs.db
+
+# direnv / local env
+.envrc.local
