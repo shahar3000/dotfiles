@@ -74,9 +74,6 @@ let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " C++/Pyt
 Plug 'puremourning/vimspector'      " step-debugger for C++/Python/Go
 Plug 'rhysd/vim-clang-format'       " clang-format integration
 
-" Languages / folding
-Plug 'vim-utils/vim-ruby-fold'
-
 " Notes (vimwiki) + markdown
 Plug 'vimwiki/vimwiki'
 Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' } " live md preview
@@ -401,5 +398,3 @@ let g:vimwiki_folding = 'expr'
 let g:bullets_enabled_file_types = ['markdown', 'text', 'gitcommit']
 
 let g:markdown_fenced_languages = ['bash', 'c', 'cpp', 'python', 'go', 'vim', 'json']
-
-filetype plugin on
