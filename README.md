@@ -21,7 +21,7 @@ root is needed it prints the exact command in a banner and waits for you to run 
 3. installs **Homebrew** (canonical `/home/linuxbrew` when possible, else `~/.homebrew`)
 4. `brew install`s tools: neovim, vim, **node** (coc/LSP), **python** (pynvim for
    vimspector), git-delta, bat, fzf, ripgrep, jq, universal-ctags, eza, zoxide,
-   starship, tmux, gopls (llvm separate/best-effort)
+   starship, tmux, herdr, gopls (llvm separate/best-effort)
 5. installs **zim** (zsh loader) + vim-plug + nvim plugins
 6. makes **zsh** the login shell (`sudo usermod`, else a guarded `~/.bashrc` hand-off)
 7. prompts (TTY only) for git identity, vimwiki path, tmux clipboard target
@@ -75,6 +75,7 @@ triangle separators should be.
 | `shell/zimrc` | zim module list (plugins: autosuggestions, fast-syntax-highlighting, fzf-tab, history-substring-search) |
 | `starship/starship.toml` | prompt config (Nerd Font icons; symlinked to `~/.config/starship.toml`) |
 | `tmux/tmux.conf` | tmux config |
+| `herdr/config.toml` | herdr (agent multiplexer) config — gruvbox theme, tmux-like keys (symlinked to `~/.config/herdr/config.toml`) |
 | `git/gitconfig` | git config + delta |
 | `claude/settings.json` | Claude Code settings (portable subset; use your own Anthropic account) |
 | `claude/statusline.sh` | custom statusline (symlinked to `~/.claude/statusline.sh`; needs `jq`) |

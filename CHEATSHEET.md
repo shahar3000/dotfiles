@@ -106,6 +106,24 @@ vim-markdown-folding (it would conflict). bullets.vim is scoped to
 
 ---
 
+## herdr (agent multiplexer · prefix = `Ctrl-b`)
+
+Defaults mirror tmux; only `split_vertical` is remapped to `|` for parity.
+
+| Key | Action |
+|-----|--------|
+| `prefix \|` | split vertical |
+| `prefix -` | split horizontal |
+| `prefix c` | new tab · `prefix n` / `prefix p` next / prev tab |
+| `prefix h/j/k/l` | focus pane · `prefix shift+h/j/k/l` swap pane |
+| `prefix z` | zoom pane · `prefix x` close pane |
+| `prefix [` | copy-mode |
+| `prefix r` | resize mode · `prefix shift+r` reload config |
+| `prefix w` | workspace picker · `prefix shift+n` new workspace |
+| `prefix b` | toggle sidebar · `prefix q` detach · `prefix ?` help |
+
+---
+
 ## zsh
 
 | Item | Action |
