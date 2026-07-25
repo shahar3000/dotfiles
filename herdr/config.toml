@@ -1,0 +1,38 @@
+# ~/.config/herdr/config.toml — herdr (agent multiplexer) config.
+# Bindings mirror the tmux setup where it matters; herdr's defaults already match
+# most of it (Ctrl-b prefix, h/j/k/l pane nav, z zoom, c new tab, [ copy-mode).
+# Full annotated reference: https://herdr.dev/docs/config-reference/
+
+[theme]
+# gruvbox to match nvim (gruvbox-community), tmux, and starship.
+name = "gruvbox"
+auto_switch = false
+
+# Nudge herdr's gruvbox tokens toward the exact hexes used in the tmux status bar,
+# so accents line up across the whole setup.
+[theme.custom]
+accent = "#d79921"   # gruvbox yellow — same accent as the tmux status bar
+yellow = "#d79921"
+green  = "#98971a"   # gruvbox dark green (readable current-item highlight)
+red    = "#cc241d"
+blue   = "#458588"
+
+[keys]
+# Prefix stays Ctrl-b (same as tmux). Left unset = default "ctrl+b".
+# Only ONE override vs herdr defaults: split vertical on prefix+| to match tmux's
+# `prefix |` (herdr defaults this to prefix+v). Horizontal split already matches
+# tmux's `prefix -` (herdr default prefix+minus). Everything else uses herdr
+# defaults, which already align with the tmux config:
+#   pane nav   prefix+h/j/k/l      zoom       prefix+z
+#   new tab    prefix+c            copy-mode  prefix+[
+#   next/prev  prefix+n / prefix+p close pane prefix+x
+#   resize     prefix+r            reload     prefix+shift+r
+split_vertical = "prefix+|"
+
+# Custom command popups can be added here, e.g.:
+#   [[keys.command]]
+#   key = "prefix+g"        # avoid alt on macOS (Option needs iTerm Esc+ config)
+#   type = "popup"
+#   command = "btop"        # or a scratch shell, etc.
+#   width = "80%"
+#   height = "80%"

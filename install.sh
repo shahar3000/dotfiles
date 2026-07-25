@@ -251,7 +251,7 @@ install_tools() {
 	brew install -y \
 		zsh vim neovim node python \
 		git-delta bat fzf ripgrep jq universal-ctags eza zoxide \
-		starship tmux gopls \
+		starship tmux herdr gopls \
 		|| warn "some brew packages failed — check output above"
 
 	# llvm (full toolchain: clang-format, clang-tidy, lldb, and C++ clangd) is
@@ -521,6 +521,7 @@ link_configs() {
 	link "$DOTFILES/shell/zimrc"             "$HOME/.zimrc"
 	link "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
 	link "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
+	link "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 	link "$DOTFILES/git/gitconfig"           "$HOME/.gitconfig"
 	link "$DOTFILES/claude/settings.json"    "$HOME/.claude/settings.json"
 	link "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
