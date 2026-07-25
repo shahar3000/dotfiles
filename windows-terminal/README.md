@@ -13,25 +13,63 @@ palette, `COLORTERM=truecolor`, and WSL + SSH profiles. Everything inside Linux
 filesystem, and Windows Terminal keeps its config at a fixed per-package path.
 So this file is **copied/merged in by hand, once** — not auto-installed.
 
-## Install
+## Setup (fresh Windows box, start to finish)
 
-1. **Install the font on Windows** (see the repo root README's "Nerd Font on
-   WSL / Windows Terminal" section): `JetBrainsMono Nerd Font Mono`.
+Run these in **PowerShell** (open Start → type "PowerShell").
 
-2. **Install Windows Terminal** if needed:
+1. **Install WSL2 + Ubuntu** (skip if you only SSH out and won't use local Linux):
+   ```powershell
+   wsl --install -d Ubuntu
+   ```
+   Reboot if prompted. On first launch it asks you to create a Linux username +
+   password — that's your account *inside* Ubuntu.
+
+2. **Install Windows Terminal** (may already be present on Windows 11):
    ```powershell
    winget install Microsoft.WindowsTerminal
    ```
 
-3. **Apply the settings.** Open Windows Terminal → `Ctrl+,` → click
-   **"Open JSON file"** (bottom-left) to see where your `settings.json` lives
+3. **Install the font on Windows** — `JetBrainsMono Nerd Font Mono` (see the repo
+   root README's "Nerd Font on WSL / Windows Terminal" section for the exact
+   download/winget steps). Do this before applying settings or you'll see tofu.
+
+4. **Get this file onto Windows.** Either clone the repo in WSL and read it from
+   `\\wsl$\Ubuntu\home\<you>\dotfiles\windows-terminal\settings.json`, or just
+   open the file on GitHub and copy its contents.
+
+5. **Apply the settings.** Open Windows Terminal → `Ctrl+,` → click
+   **"Open JSON file"** (bottom-left) to open the live `settings.json`
    (`%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json`).
 
-   - **Fresh machine:** replace that file's contents with `settings.json` here.
-   - **Existing setup you want to keep:** don't overwrite — instead merge the
-     pieces you want: copy the `"Gruvbox Dark"` entry into your `schemes`, set
-     the font under `profiles.defaults`, and add the WSL/SSH profiles to
-     `profiles.list`.
+   - **Fresh machine:** replace that file's entire contents with `settings.json`
+     here, save. Windows Terminal reloads instantly.
+   - **Existing setup you want to keep:** don't overwrite — merge only the pieces
+     you want: copy the `"Gruvbox Dark"` entry into your `schemes`, set the font
+     under `profiles.defaults`, and add the WSL/SSH profiles to `profiles.list`.
+
+6. **Provision Linux.** Open the **Ubuntu (WSL)** profile (see "Daily use" below)
+   and run the dotfiles installer once:
+   ```bash
+   git clone https://github.com/shahar3000/dotfiles.git ~/dotfiles && ~/dotfiles/install.sh
+   ```
+   Then `exec zsh`. Now WSL has your full zsh/tmux/nvim/starship setup.
+
+## Daily use
+
+- **Open a shell:** click the **`⌄` dropdown** next to the `+` tab button and pick
+  a profile — `Ubuntu (WSL)` for local Linux, `dev desk (ssh)` to jump to the
+  remote box. `Ubuntu (WSL)` is the default, so a plain new tab (`Ctrl+Shift+T`)
+  opens it.
+- **New tab:** `Ctrl+Shift+T` · **switch tabs:** `Ctrl+Tab`.
+- **Split panes (Windows Terminal's own):** `Alt+Shift+D` duplicates the current
+  pane. *Note:* once you're inside a remote/WSL session you'll usually let **tmux**
+  manage panes (`Ctrl+b` prefix) instead — Windows Terminal splits and tmux splits
+  are independent layers, so pick one per session to avoid confusion.
+- **Copy/paste:** `Ctrl+Shift+C` / `Ctrl+Shift+V` (kept off the bare `Ctrl+C`/`V`
+  so they don't clash with shell/tmux). Selecting text does **not** auto-copy
+  (`copyOnSelect` is off), so tmux copy-mode keeps working.
+- **Find in scrollback:** `Ctrl+Shift+F`.
+- **Settings GUI:** `Ctrl+,` any time to tweak fonts/colors without editing JSON.
 
 ## After applying — check these
 
