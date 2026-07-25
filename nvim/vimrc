@@ -392,6 +392,8 @@ nmap <F10> :call NerdTreeToggle()<CR>
 
 nmap gb :Git blame<CR>
 nmap gs :vertical G show<CR>
+" vimagit — magit-style staging/commit UI (stage hunks, commit, all in one buffer)
+nmap <leader>M :Magit<CR>
 
 " ============================================================================
 " clang-format

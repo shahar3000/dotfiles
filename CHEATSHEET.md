@@ -54,6 +54,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 |-----|--------|
 | `gb` | `:Git blame` |
 | `gs` | `:vertical G show` |
+| `,M` | `:Magit` — magit-style staging/commit UI (vimagit) |
 | `F8` | `:Gvdiffsplit` (diff current file) |
 | `:Git`, `:G` | any git command |
 
