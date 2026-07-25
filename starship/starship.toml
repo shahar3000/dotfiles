@@ -1,5 +1,5 @@
 # starship prompt — informative, Nerd Font icons, hostname only over SSH.
-# REQUIRES a Nerd Font in your terminal (CaskaydiaCove Nerd Font Mono); without
+# REQUIRES a Nerd Font in your terminal (JetBrainsMono Nerd Font Mono); without
 # one the glyphs below show as tofu boxes. install.sh installs the font off-WSL;
 # on WSL set it in Windows Terminal (see README). To sanity-check glyphs render:
 #   echo "    "   (branch, folder, node, python, go)
