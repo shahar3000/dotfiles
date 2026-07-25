@@ -36,14 +36,18 @@ style = "purple bold"
 
 [git_status]
 style = "red"
-ahead = "⇡${count}"
-behind = "⇣${count}"
-diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+# Drop starship's default literal [ ] wrapper (default is '([\[$all_status$ahead_behind\]]($style) )').
+# The brackets forced a dangling edge-space next to ] since states have no separator; without them
+# each symbol's own trailing space cleanly separates states and merges into the inter-module gap.
+format = "([$all_status$ahead_behind]($style))"
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
 conflicted = "${count} "     # nf-fa-exclamation-triangle
 untracked = "${count} "       # nf-fa-question
 modified = "${count} "      # nf-fa-pencil
 staged = "${count} "        # nf-fa-plus
-renamed = "»${count}"
+renamed = "»${count} "
 deleted = "${count} "       # nf-fa-trash
 
 # ---- languages / tools: shown only in relevant projects, with logos ----
