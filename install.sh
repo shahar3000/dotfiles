@@ -452,28 +452,30 @@ install_vim_plugins() {
 			warn "vim-plug download failed or incomplete"; rm -f "$tmp"
 		fi
 	fi
-	# vimspector needs nvim's python3 provider -> the 'pynvim' module. Install it
-	# best-effort so debugging works out of the box (without it: "Vimspector
-	# unavailable: Requires Vim compiled with +python3").
-	# pynvim = nvim's python3 provider (vimspector needs it). Prefer brew's python
-	# (installed above, first on PATH via zshenv, NOT externally-managed -> plain
-	# pip works). This is the same python3 nvim's provider resolves from PATH.
-	local brew_py=""
-	have brew && brew_py="$(brew --prefix 2>/dev/null)/bin/python3"
-	if [ -n "$brew_py" ] && [ -x "$brew_py" ]; then
-		info "installing pynvim into brew python ($brew_py)"
-		"$brew_py" -m pip install --quiet pynvim 2>/dev/null \
-			|| warn "pynvim install into brew python failed — run '$brew_py -m pip install pynvim'."
-	elif have python3; then
-		# No brew python (SKIP_PACKAGES / brew failed): fall back to system python3.
-		# Modern distros are PEP-668 externally-managed, so --user pip is rejected;
-		# --break-system-packages --user keeps it in ~/.local, not system dirs.
-		info "installing pynvim into system python3 (vimspector)"
-		if   python3 -m pip install --user --quiet pynvim 2>/dev/null; then :
-		elif python3 -m pip install --user --break-system-packages --quiet pynvim 2>/dev/null; then :
+	# vimspector needs nvim's python3 provider -> the 'pynvim' module, installed
+	# into the SAME python3 nvim resolves. nvim uses the first python3 on PATH,
+	# which (with brew loaded) is brew's python3 — so target `command -v python3`
+	# rather than guessing a prefix. Ensure pip exists, then install pynvim.
+	local py; py="$(command -v python3 || true)"
+	if [ -n "$py" ]; then
+		info "installing pynvim into $py (vimspector)"
+		"$py" -m ensurepip --upgrade >/dev/null 2>&1 || true   # some pythons ship pip lazily
+		# Both brew python and modern distro python are PEP-668 "externally managed"
+		# and reject a plain install. Two escape hatches, and they differ:
+		#   - distro python: --user (into ~/.local) + --break-system-packages
+		#   - brew  python: DISABLES --user, so it needs --break-system-packages WITHOUT --user
+		# Try each; the first that succeeds wins.
+		if   "$py" -m pip install --quiet pynvim; then :
+		elif "$py" -m pip install --break-system-packages --quiet pynvim; then :
+		elif "$py" -m pip install --user --break-system-packages --quiet pynvim; then :
 		else
-			warn "could not install pynvim automatically — for vimspector run:"
-			warn "  python3 -m pip install --user --break-system-packages pynvim"
+			warn "pynvim install failed — try: $py -m pip install --break-system-packages pynvim"
+		fi
+		# verify it actually imports in the python nvim will use
+		if "$py" -c 'import pynvim' 2>/dev/null; then
+			info "pynvim OK in $py"
+		else
+			warn "pynvim still not importable by $py — vimspector will report 'Requires +python3'."
 		fi
 	else
 		warn "python3 not found — vimspector needs it + pynvim for debugging."
