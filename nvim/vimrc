@@ -58,6 +58,8 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'gruvbox-community/gruvbox'    " colorscheme (maintained fork of morhetz/gruvbox)
 Plug 'justinmk/vim-syntax-extra'    " better C syntax
 Plug 'ludovicchabant/vim-gutentags' " auto-manage ctags in background
+Plug 'inkarkat/vim-ingo-library'    " prerequisite of vim-mark
+Plug 'inkarkat/vim-mark'            " multi-color word highlighting (see maps below)
 Plug 'troydm/zoomwintab.vim'        " fullscreen-toggle a split (like tmux prefix z)
 Plug 'wsdjeg/vim-fetch'             " open file.c:42 -> jump to line 42
 Plug 'christoomey/vim-tmux-navigator' " move across vim splits + tmux panes
@@ -78,6 +80,10 @@ Plug 'rhysd/vim-clang-format'       " clang-format integration
 Plug 'vimwiki/vimwiki'
 Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' } " live md preview
 Plug 'bullets-vim/bullets.vim'      " list/checkbox automation (scoped below, NOT in vimwiki)
+
+" vim-mark: suppress its default maps BEFORE the plugin loads (at plug#end),
+" so we can bind our own without <Leader>r shadowing <Leader>rn (coc-rename).
+let g:mw_no_mappings = 1
 
 call plug#end()
 
@@ -335,6 +341,22 @@ nmap <F5> :FGrep<CR>
 nmap <F6> :FGrep <C-R>=expand("<cword>")<CR><CR>
 " F7 = toggle live markdown preview (markdown-preview.nvim)
 nmap <F7> <Plug>MarkdownPreviewToggle
+
+" ============================================================================
+" vim-mark — multi-color word highlighting (default maps disabled above)
+" ============================================================================
+" Mark several different words, each in its own persistent color, to trace
+" identifiers across a file/log (distinct from hlsearch's single pattern).
+" <Leader>r is remapped to <Leader>R here so it can't prefix-shadow <Leader>rn.
+nmap <Leader>m <Plug>MarkSet
+xmap <Leader>m <Plug>MarkSet
+nmap <Leader>R <Plug>MarkRegex
+xmap <Leader>R <Plug>MarkRegex
+nmap <Leader>n <Plug>MarkClear
+nmap <Leader>* <Plug>MarkSearchCurrentNext
+nmap <Leader># <Plug>MarkSearchCurrentPrev
+nmap <Leader>/ <Plug>MarkSearchAnyNext
+nmap <Leader>? <Plug>MarkSearchAnyPrev
 
 " ============================================================================
 " Window / navigation extras

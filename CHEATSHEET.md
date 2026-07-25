@@ -71,6 +71,17 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `,F` | toggle clang-format-on-save |
 | open `file.c:42` | jumps to line 42 (vim-fetch) |
 
+### Marks — multi-color highlighting (vim-mark)
+Highlight several words at once, each in its own color — great for tracing
+identifiers across a file or log. (Distinct from `hlsearch`, which is one pattern.)
+| Key | Action |
+|-----|--------|
+| `,m` | mark/unmark word under cursor (cycles colors) |
+| `,R` | mark by **regex** (prompts) — remapped from vim-mark's default `,r` to protect `,rn` |
+| `,n` | clear mark under cursor · (not on a mark) clear all |
+| `,*` `,#` | next / prev occurrence of the **current** mark |
+| `,/` `,?` | next / prev occurrence of **any** mark |
+
 ### Markdown / vimwiki  (see the "why" note below)
 | Key / cmd | Action |
 |-----------|--------|
