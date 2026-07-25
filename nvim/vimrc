@@ -281,6 +281,12 @@ nnoremap <silent> <space>k :<C-u>CocPrev<CR>
 nnoremap <silent> <space>p :<C-u>CocListResume<CR>
 nnoremap <silent> <leader>qf  <Plug>(coc-fix-current)
 
+" Call hierarchy (LSP). Opens a coc tree of who-calls / is-called-by the
+" function under the cursor. Works for C/C++ (clangd), Python (pyright),
+" Go (gopls).
+nnoremap <silent> <leader>ci :call CocAction('showIncomingCalls')<CR>
+nnoremap <silent> <leader>co :call CocAction('showOutgoingCalls')<CR>
+
 autocmd VimEnter * highlight link CocSemClass CocSemType
 autocmd VimEnter * highlight link CocSemStruct CocSemType
 autocmd VimEnter * highlight link CocSemMacro Macro

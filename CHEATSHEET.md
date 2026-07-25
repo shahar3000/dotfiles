@@ -30,6 +30,7 @@ Keybindings & commands **this config actually defines**. Leader is `,`.
 | `T` | hover documentation |
 | `,rn` | rename symbol |
 | `,qf` | quick-fix current line |
+| `,ci` `,co` | call hierarchy: **i**ncoming / **o**utgoing calls |
 | `[e` `]e` | prev / next **error** |
 | `[w` `]w` (or `[g` `]g`) | prev / next diagnostic (any) |
 | `:Format` | format buffer · `:OR` organize imports · `:Fold` |
