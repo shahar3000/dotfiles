@@ -39,12 +39,12 @@ style = "red"
 ahead = "⇡${count}"
 behind = "⇣${count}"
 diverged = "⇕⇡${ahead_count}⇣${behind_count}"
-conflicted = " ${count}"     # nf-fa-exclamation-triangle
-untracked = "${count}"       # nf-fa-question
-modified = " ${count}"      # nf-fa-pencil
-staged = " ${count}"        # nf-fa-plus
+conflicted = "  ${count}"     # nf-fa-exclamation-triangle
+untracked = "  ${count}"       # nf-fa-question
+modified = "  ${count}"      # nf-fa-pencil
+staged = "  ${count}"        # nf-fa-plus
 renamed = "»${count}"
-deleted = " ${count}"       # nf-fa-trash
+deleted = "  ${count}"       # nf-fa-trash
 
 # ---- languages / tools: shown only in relevant projects, with logos ----
 [nodejs]
