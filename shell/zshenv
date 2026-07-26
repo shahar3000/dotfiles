@@ -41,15 +41,15 @@ typeset -U path PATH   # keep PATH de-duplicated across re-sources (e.g. rezsh)
 # ---- Rust ----
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
-# ---- LLVM (brew) — compute the prefix ONCE (brew is a slow Ruby startup; this
-#      file is sourced by every shell incl. non-interactive `zsh -c`). ----
-if command -v brew >/dev/null 2>&1; then
-	_llvm="$(brew --prefix llvm 2>/dev/null)"
-	if [ -n "$_llvm" ] && [ -d "$_llvm" ]; then
-		export PATH="$_llvm/bin:$PATH"
-		export LDFLAGS="-L$_llvm/lib"
-		export CPPFLAGS="-I$_llvm/include"
-	fi
+# ---- LLVM (brew) ----
+# Derive from $HOMEBREW_PREFIX (exported by the brew shellenv above) instead of
+# spawning `brew --prefix llvm`, which is a slow Ruby startup on EVERY shell incl.
+# non-interactive `zsh -c`. brew always symlinks a formula at $PREFIX/opt/<name>.
+if [ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$HOMEBREW_PREFIX/opt/llvm" ]; then
+	_llvm="$HOMEBREW_PREFIX/opt/llvm"
+	export PATH="$_llvm/bin:$PATH"
+	export LDFLAGS="-L$_llvm/lib"
+	export CPPFLAGS="-I$_llvm/include"
 	unset _llvm
 fi
 
