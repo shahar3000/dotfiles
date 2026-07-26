@@ -37,6 +37,7 @@ Keybindings & commands **this config actually defines**. Leader is `,`.
 | `:Format` | format buffer · `:OR` organize imports · `:Fold` |
 | `<space>a` | diagnostics list · `<space>o` outline · `<space>s` workspace symbols |
 | `<space>e` | extensions · `<space>c` commands |
+| `<space>j` `<space>k` | next / prev item in a CocList · `<space>p` resume last list |
 
 ### Debugging (vimspector)
 Put a `.vimspector.json` in the project root (templates in `vimspector/`).
