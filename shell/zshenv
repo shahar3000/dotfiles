@@ -30,11 +30,11 @@ elif command -v vi >/dev/null 2>&1; then
 fi
 
 # ---- Go ----
+# Don't export GOROOT: the toolchain computes it itself, a hardcoded value breaks
+# on upgrade/move, and probing `go env GOROOT` here would spawn `go` on EVERY shell
+# (incl. non-interactive `zsh -c`). GOPATH/GOBIN are cheap statics.
 export GOPATH="$HOME/go"
 export GOBIN="$GOPATH/bin"
-if command -v go >/dev/null 2>&1; then
-	export GOROOT="$(go env GOROOT)"
-fi
 export PATH="$PATH:${GOPATH}/bin"
 typeset -U path PATH   # keep PATH de-duplicated across re-sources (e.g. rezsh)
 
