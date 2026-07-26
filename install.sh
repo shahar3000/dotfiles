@@ -520,6 +520,10 @@ install_vim_plugins() {
 # ---------------------------------------------------------------------------
 link() {
 	local src="$1" dest="$2"
+	# Refuse to create a dangling symlink if the repo source is missing (e.g. a
+	# file was renamed/removed). Warn instead of silently backing up a real dest
+	# and pointing it at nothing.
+	[ -e "$src" ] || { warn "link: source missing, skipping: $src"; return; }
 	mkdir -p "$(dirname "$dest")"
 	# already correctly linked? no-op (idempotent)
 	[ "$(readlink "$dest" 2>/dev/null)" = "$src" ] && return
