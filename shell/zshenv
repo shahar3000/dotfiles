@@ -5,13 +5,34 @@
 # visible to the detection blocks in .zshrc.
 
 # ---- Homebrew (macOS / Linuxbrew / user-local), first one present wins ----
+# `brew shellenv` is a Ruby startup (~200-500ms) and this file is sourced by EVERY
+# shell, incl. non-interactive `zsh -c`. Its output is static (only brew's paths),
+# so cache it to ~/.cache and just source the cache — regenerating only when the
+# brew binary is newer than the cache (i.e. brew moved/upgraded). The cache is
+# machine-local (never in the tracked repo), so per-machine prefixes stay correct.
 for _brew in \
 	/opt/homebrew/bin/brew \
 	/usr/local/bin/brew \
 	/home/linuxbrew/.linuxbrew/bin/brew \
 	"$HOME/.homebrew/bin/brew"; do          # user-local (no-sudo) install
 	if [ -x "$_brew" ]; then
-		eval "$("$_brew" shellenv)"
+		_brew_cache="${XDG_CACHE_HOME:-$HOME/.cache}/brew-shellenv.zsh"
+		if [ -s "$_brew_cache" ] && [ "$_brew_cache" -nt "$_brew" ]; then
+			source "$_brew_cache"
+		# Regenerate: write to a temp then atomic-rename so a concurrent shell can't
+		# source a half-written cache. Only attempt it when the cache dir is
+		# writable (checked first, so a failed '>' redirect can't spew a shell error
+		# to stderr on every restricted `zsh -c`). Otherwise fall back to a live eval
+		# so brew env is always applied — never silently lost.
+		elif mkdir -p "${_brew_cache:h}" 2>/dev/null && [ -w "${_brew_cache:h}" ] \
+			&& "$_brew" shellenv > "$_brew_cache.$$" 2>/dev/null \
+			&& mv -f "$_brew_cache.$$" "$_brew_cache" 2>/dev/null; then
+			source "$_brew_cache"
+		else
+			rm -f "$_brew_cache.$$" 2>/dev/null   # clean up a failed temp if any
+			eval "$("$_brew" shellenv)"           # cache unavailable — live fallback
+		fi
+		unset _brew_cache
 		break
 	fi
 done
