@@ -53,14 +53,18 @@ Plug 'junegunn/fzf.vim'
 
 " Navigation / UI
 Plug 'scrooloose/nerdtree'          " file tree
-Plug 'vim-airline/vim-airline'      " statusline (coc + git aware, auto-themed)
-Plug 'vim-airline/vim-airline-themes'
-" Colorscheme: nvim gets the Lua port (ellisonleao/gruvbox.nvim, treesitter-aware);
-" plain vim gets sainnhe/gruvbox-material (works in vim 8+ and ships its own airline
-" theme). Configured separately below under has('nvim'). Both need termguicolors.
+" Statusline + colorscheme are editor-specific:
+"   nvim: lualine (Lua statusline, themes natively off gruvbox.nvim) +
+"         ellisonleao/gruvbox.nvim (treesitter/semantic-highlight aware).
+"   vim:  vim-airline + sainnhe/gruvbox-material (works in vim 8+, ships its own
+"         airline theme). Both colorschemes need termguicolors.
 if has('nvim')
+	Plug 'nvim-lualine/lualine.nvim'
+	Plug 'nvim-tree/nvim-web-devicons'   " lualine icons (Nerd Font)
 	Plug 'ellisonleao/gruvbox.nvim'
 else
+	Plug 'vim-airline/vim-airline'
+	Plug 'vim-airline/vim-airline-themes'
 	Plug 'sainnhe/gruvbox-material'
 endif
 Plug 'justinmk/vim-syntax-extra'    " better C syntax
@@ -131,18 +135,43 @@ else
 	endtry
 endif
 
-" airline: nvim uses the vim-airline-themes 'gruvbox' theme; plain vim uses the
-" 'gruvbox_material' theme that ships inside the gruvbox-material plugin.
-let g:airline_theme = has('nvim') ? 'gruvbox' : 'gruvbox_material'
-let g:airline#extensions#coc#enabled = 1
-let g:airline#extensions#branch#enabled = 1
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#formatter = 'unique_tail'
-" Powerline separators (the triangle edges). Requires a Nerd Font in your
-" terminal (JetBrainsMono Nerd Font Mono) — consistent with the starship prompt
-" and tmux powerline bar, which also need it. Set to 0 in ~/.vimrc.local on a
-" box without the font to avoid tofu.
-let g:airline_powerline_fonts = 1
+" ---- Statusline ----
+if has('nvim')
+	" lualine: themes itself off the active colorscheme (theme='auto' picks up
+	" gruvbox.nvim). Shows git branch/diff, coc diagnostics, and coc's status
+	" string. Tabline (buffers) mirrors airline's tabline on the vim side.
+	" pcall so a not-yet-installed plugin can't error the whole vimrc.
+	lua << EOF
+	pcall(function()
+	  require('lualine').setup({
+	    options = {
+	      theme = 'auto',
+	      icons_enabled = true,
+	      globalstatus = true,          -- single statusline (needs laststatus=3)
+	    },
+	    sections = {
+	      lualine_b = { 'branch', 'diff', { 'diagnostics', sources = { 'coc' } } },
+	      lualine_x = { 'g:coc_status', 'encoding', 'fileformat', 'filetype' },
+	    },
+	    tabline = {
+	      lualine_a = { { 'buffers', mode = 2 } },   -- name + number, like airline tabline
+	      lualine_z = { 'tabs' },
+	    },
+	  })
+	end)
+EOF
+else
+	" vim: airline. gruvbox-material ships its own airline theme (gruvbox_material).
+	let g:airline_theme = 'gruvbox_material'
+	let g:airline#extensions#coc#enabled = 1
+	let g:airline#extensions#branch#enabled = 1
+	let g:airline#extensions#tabline#enabled = 1
+	let g:airline#extensions#tabline#formatter = 'unique_tail'
+	" Powerline separators (the triangle edges). Requires a Nerd Font in your
+	" terminal (JetBrainsMono Nerd Font Mono) — consistent with the starship prompt
+	" and tmux powerline bar. Set to 0 in ~/.vimrc.local on a box without the font.
+	let g:airline_powerline_fonts = 1
+endif
 
 syntax on
 set switchbuf=useopen
@@ -153,7 +182,9 @@ set incsearch
 set backspace=indent,eol,start
 set ruler
 let mapleader = ","
-set laststatus=2
+" laststatus: 3 (single global statusline) for nvim's lualine, 2 (per-window) for
+" vim's airline. lualine also sets this itself via globalstatus, but be explicit.
+if has('nvim') | set laststatus=3 | else | set laststatus=2 | endif
 " history/marks persistence: nvim calls it 'shada', vim calls it 'viminfo'
 if has('nvim')
 	set shada='100,<50,s10,h
@@ -215,7 +246,8 @@ else
   inoremap <silent><expr> <c-@> coc#refresh()
 endif
 
-" (airline refreshes coc status automatically — no manual update hook needed)
+" (statusline coc status: airline updates it automatically on vim; lualine reads
+"  g:coc_status live on nvim — no manual update hook needed either way)
 
 " Diagnostic navigation: errors vs warnings separately
 nmap <silent> [e <Plug>(coc-diagnostic-prev-error)

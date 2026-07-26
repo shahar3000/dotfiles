@@ -35,8 +35,9 @@ On first `nvim` launch, coc auto-installs `coc-clangd`/`coc-pyright`/`coc-go`.
 
 ## Nerd Font (required for icons)
 
-The starship prompt, vim-airline, and the tmux status line all use **Nerd Font
-glyphs** (git-branch icons, language logos, powerline triangle separators). You
+The starship prompt, the editor statusline (lualine in nvim, vim-airline in vim),
+and the tmux status line all use **Nerd Font glyphs** (git-branch icons, language
+logos, powerline triangle separators). You
 need **JetBrainsMono Nerd Font Mono** set in your terminal — a clean, highly
 readable monospace coding font (Nerd Font-patched). Without it those glyphs show
 as tofu boxes (the configs still work, they just look wrong).
