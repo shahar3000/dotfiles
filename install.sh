@@ -376,16 +376,32 @@ BLOCK
 }
 
 add_bashrc_exec_zsh() {
-	local zsh_path="$1" marker="# >>> dotfiles: exec zsh >>>" login_rc target
+	local zsh_path="$1" marker="# >>> dotfiles: exec zsh >>>" login_rc added=0
 	# interactive non-login shells
-	grep -qF "$marker" "$HOME/.bashrc" 2>/dev/null || _bashrc_handoff_block "$zsh_path" >> "$HOME/.bashrc"
+	grep -qF "$marker" "$HOME/.bashrc" 2>/dev/null || { _bashrc_handoff_block "$zsh_path" >> "$HOME/.bashrc"; added=1; }
 	# login shells (SSH/console): use an existing login file, else create ~/.bash_profile
 	if   [ -f "$HOME/.bash_profile" ]; then login_rc="$HOME/.bash_profile"
 	elif [ -f "$HOME/.bash_login" ];   then login_rc="$HOME/.bash_login"
 	elif [ -f "$HOME/.profile" ];      then login_rc="$HOME/.profile"
 	else login_rc="$HOME/.bash_profile"; fi
-	grep -qF "$marker" "$login_rc" 2>/dev/null || _bashrc_handoff_block "$zsh_path" >> "$login_rc"
-	info "added brew + 'exec zsh' hand-off to ~/.bashrc and $(basename "$login_rc") (NO_EXEC_ZSH=1 to bypass)"
+	grep -qF "$marker" "$login_rc" 2>/dev/null || { _bashrc_handoff_block "$zsh_path" >> "$login_rc"; added=1; }
+	# Only claim we added something when we actually did (idempotent re-runs say "present").
+	if [ "$added" = "1" ]; then
+		info "added 'exec zsh' hand-off to ~/.bashrc and $(basename "$login_rc") (NO_EXEC_ZSH=1 to bypass)"
+	else
+		info "'exec zsh' hand-off already present in ~/.bashrc and $(basename "$login_rc")"
+	fi
+}
+
+# Print a user's login shell, per-OS. Linux uses NSS (`getent passwd`); macOS has
+# no /etc/passwd for normal users, so read the Directory Services record instead.
+current_login_shell() {
+	local u="$1"
+	if [ "$OS" = "macos" ]; then
+		dscl . -read "/Users/$u" UserShell 2>/dev/null | awk '{print $2}'
+	else
+		getent passwd "$u" 2>/dev/null | cut -d: -f7
+	fi
 }
 
 set_default_shell() {
@@ -403,8 +419,10 @@ set_default_shell() {
 	fi
 	# $USER can be unset under `set -u` (minimal containers, su); derive safely.
 	local user="${USER:-$(id -un)}"
-	# Current login shell already zsh? (check both $SHELL and the passwd record)
-	local cur; cur="$(getent passwd "$user" 2>/dev/null | cut -d: -f7)"
+	# Current login shell already zsh? (check both $SHELL and the passwd record).
+	# NOTE: `getent passwd` returns nothing on macOS (no NSS/etc-passwd), so read
+	# the login shell via `dscl` there; use getent on Linux.
+	local cur; cur="$(current_login_shell "$user")"
 	if [ "${SHELL:-}" = "$zsh_path" ] || [ "$cur" = "$zsh_path" ]; then
 		info "default shell already zsh"; return
 	fi
@@ -421,7 +439,7 @@ set_default_shell() {
 
 	if [ -n "$shellcmd" ]; then
 		priv_step "Set zsh as your login shell" "$shellcmd"
-		cur="$(getent passwd "$user" 2>/dev/null | cut -d: -f7)"
+		cur="$(current_login_shell "$user")"
 	fi
 
 	if [ "$cur" = "$zsh_path" ] || [ "${SHELL:-}" = "$zsh_path" ]; then
