@@ -1,7 +1,13 @@
-# ~/.gitconfig — portable configuration + aliases only.
-# Set your identity locally (NOT tracked here):
-#   git config --global user.name  "Your Name"
-#   git config --global user.email "you@example.com"
+# ~/.gitconfig — portable configuration + aliases only (symlinked from dotfiles).
+# Identity and any machine-local settings live in ~/.gitconfig.local (untracked),
+# pulled in by the [include] below. Do NOT run `git config --global user.*` — that
+# writes back through the symlink into THIS tracked file. install.sh writes the
+# identity to ~/.gitconfig.local; or add it yourself:
+#   git config --file ~/.gitconfig.local user.name  "Your Name"
+#   git config --file ~/.gitconfig.local user.email "you@example.com"
+# A missing include path is silently ignored by git, so this is safe when absent.
+[include]
+	path = ~/.gitconfig.local
 
 [merge]
 	conflictstyle = diff3

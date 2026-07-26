@@ -578,15 +578,24 @@ link_configs() {
 # 8. interactive machine-local config (TTY only; skipped/defaulted under pipes)
 # ---------------------------------------------------------------------------
 
-# git identity — kept out of the tracked, public gitconfig
+# git identity -> ~/.gitconfig.local (untracked; pulled in via [include] in the
+# tracked gitconfig). NOT `--global`: ~/.gitconfig is a symlink to the tracked
+# repo file, so --global would write the [user] block back into it and dirty git.
 configure_git_identity() {
 	[ -t 0 ] || return                                   # only prompt on a TTY
-	[ -n "$(git config --global user.email 2>/dev/null)" ] && return  # already set
+	local local_cfg="$HOME/.gitconfig.local"
+	# Already set in the machine identity (global config OR our local include)? skip.
+	# Check those files EXPLICITLY, not plain `git config user.email` — that resolves
+	# from the CWD, so running the installer inside any repo with a repo-local
+	# identity would falsely look "set" and skip writing ~/.gitconfig.local.
+	{ [ -n "$(git config --global user.email 2>/dev/null)" ] \
+	  || [ -n "$(git config --file "$local_cfg" user.email 2>/dev/null)" ]; } && return
 	local gname gemail
 	read -r -p ">> git user.name (blank to skip): " gname || gname=""
 	read -r -p ">> git user.email (blank to skip): " gemail || gemail=""
-	[ -n "$gname" ]  && git config --global user.name  "$gname"
-	[ -n "$gemail" ] && git config --global user.email "$gemail"
+	[ -n "$gname" ]  && git config --file "$local_cfg" user.name  "$gname"
+	[ -n "$gemail" ] && git config --file "$local_cfg" user.email "$gemail"
+	[ -n "$gname$gemail" ] && info "wrote git identity to $local_cfg (untracked)"
 }
 
 # vimwiki path -> ~/.vimrc.local (untracked)
