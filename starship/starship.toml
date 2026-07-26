@@ -49,6 +49,7 @@ modified = "${count} "      # nf-fa-pencil
 staged = "${count} "        # nf-fa-plus
 renamed = "»${count} "
 deleted = "${count} "       # nf-fa-trash
+stashed = "${count} "     # nf-fa-inbox (was starship default '$' — the red $ you saw)
 
 # ---- languages / tools: shown only in relevant projects, with logos ----
 [nodejs]
