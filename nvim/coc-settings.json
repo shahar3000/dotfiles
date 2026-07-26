@@ -27,8 +27,7 @@
 	"semanticTokens": {
 		"filetypes": [
 			"c",
-			"cpp",
-			"rust"
+			"cpp"
 		]
 	},
 	"clangd.arguments": [
@@ -41,23 +40,12 @@
 		"--enable-config",
 		"-j=8"
 	],
-	"solargraph.formatting": true,
 	"suggest.noselect": true,
 	"diagnostic.enableMessage": "always",
 	"diagnostic.level": "information",
 	"diagnostic.messageTarget": "float",
 	"coc.preferences.enableMessageDialog": true,
-	"rust-analyzer": {
-		"server.path": "rust-analyzer",
-		"checkOnSave.enable": true,
-		"checkOnSave.command": "check",
-		"procMacro.enable": true,
-		"cargo.loadOutDirsFromCheck": true,
-		"diagnostics.enable": true
-	},
 	"workspace.ignoredFolders": [
-		"$HOME",
-		"$HOME/.cargo/**",
-		"$HOME/.rustup/**"
+		"$HOME"
 	]
 }
