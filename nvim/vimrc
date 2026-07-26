@@ -334,7 +334,7 @@ nnoremap <silent> <space>s :<C-u>CocList -I symbols<cr>
 nnoremap <silent> <space>j :<C-u>CocNext<CR>
 nnoremap <silent> <space>k :<C-u>CocPrev<CR>
 nnoremap <silent> <space>p :<C-u>CocListResume<CR>
-nnoremap <silent> <leader>qf  <Plug>(coc-fix-current)
+nmap <silent> <leader>qf <Plug>(coc-fix-current)
 
 " Call hierarchy (LSP). Opens a coc tree of who-calls / is-called-by the
 " function under the cursor. Works for C/C++ (clangd), Python (pyright),
