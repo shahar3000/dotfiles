@@ -13,7 +13,7 @@ auto_switch = false
 [theme.custom]
 accent = "#d79921"   # gruvbox yellow — same accent as the tmux status bar
 yellow = "#d79921"
-green  = "#98971a"   # gruvbox dark green (readable current-item highlight)
+green  = "#b8bb26"   # gruvbox bright green — matches tmux current-window highlight
 red    = "#cc241d"
 blue   = "#458588"
 
