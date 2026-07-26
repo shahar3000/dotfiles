@@ -4,7 +4,7 @@
 # Full annotated reference: https://herdr.dev/docs/config-reference/
 
 [theme]
-# gruvbox to match nvim (gruvbox-community), tmux, and starship.
+# gruvbox to match nvim (gruvbox.nvim), vim (gruvbox-material), tmux, and starship.
 name = "gruvbox"
 auto_switch = false
 
