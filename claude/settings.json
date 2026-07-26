@@ -1,6 +1,5 @@
 {
   "includeCoAuthoredBy": false,
-  "theme": "dark",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh"
@@ -10,5 +9,7 @@
     "pyright-lsp@claude-plugins-official": true,
     "clangd-lsp@claude-plugins-official": true,
     "ruby-lsp@claude-plugins-official": true
-  }
+  },
+  "theme": "dark",
+  "advisorModel": "opus"
 }
