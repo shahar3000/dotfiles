@@ -19,9 +19,10 @@ root is needed it prints the exact command in a banner and waits for you to run 
 1. symlinks configs first (so you get your dotfiles even if a later step fails)
 2. ensures brew prerequisites (curl/git/unzip/compiler) — admin step if missing
 3. installs **Homebrew** (canonical `/home/linuxbrew` when possible, else `~/.homebrew`)
-4. `brew install`s tools: neovim, vim, **node** (coc/LSP), **python** (pynvim for
-   vimspector), git-delta, bat, fzf, ripgrep, jq, universal-ctags, eza, zoxide,
-   starship, tmux, herdr, gopls (llvm separate/best-effort)
+4. `brew install`s tools: zsh, neovim, vim, **node** (coc/LSP), **python**,
+   git-delta, bat, fzf, ripgrep, jq, universal-ctags, eza, zoxide, starship, tmux,
+   herdr, gopls (llvm separate/best-effort). Then pip-installs **pynvim**
+   (vimspector) and **black** (Python formatting for coc-pyright) into that python.
 5. installs **zim** (zsh loader) + vim-plug + nvim plugins
 6. makes **zsh** the login shell (`sudo usermod`, else a guarded `~/.bashrc` hand-off)
 7. prompts (TTY only) for git identity, vimwiki path, tmux clipboard target
@@ -68,7 +69,7 @@ triangle separators should be.
 | Path | Purpose |
 |------|---------|
 | `nvim/vimrc` | main editor config (symlinked to `~/.vimrc`; vim + nvim share it) |
-| `nvim/init.vim` | 3-line shim: sources `~/.vimrc` |
+| `nvim/init.vim` | small shim: sets runtimepath and sources `~/.vimrc` |
 | `nvim/coc-settings.json` | coc / LSP settings |
 | `nvim/after/ftplugin/` | per-filetype settings (symlinked to `~/.vim/after`) |
 | `vimspector/` | per-language debug config templates (copy to project as `.vimspector.json`) |
@@ -86,6 +87,7 @@ triangle separators should be.
 ## Notes
 
 - **git identity, vimwiki path, tmux clipboard** are prompted by `install.sh` and
-  stored in untracked local files (`~/.gitconfig` global, `~/.vimrc.local`, `~/.tmux.local.conf`).
+  stored in untracked local files (`~/.gitconfig.local` — pulled in via `[include]`
+  from the tracked gitconfig — `~/.vimrc.local`, `~/.tmux.local.conf`).
 - **Machine-local zsh overrides** go in `~/.zshrc.local` (untracked, sourced last).
 - Re-run `./install.sh` any time — it only does what's missing.
