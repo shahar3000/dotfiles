@@ -489,6 +489,17 @@ let g:vimwiki_list = [{
 " the combined filetype becomes 'vimwiki.markdown':
 let g:vimwiki_filetypes = ['markdown']
 
+" Neovim's builtin ftplugin/markdown.lua calls vim.treesitter.start() with no
+" explicit language, which resolves the language from 'filetype' by splitting
+" on '.' and taking the FIRST component (see runtime lua/vim/treesitter/
+" language.lua get_lang()). For our compound 'vimwiki.markdown' filetype that
+" first component is 'vimwiki', which has no treesitter parser -> E5113 on
+" every *.md BufRead. Register 'vimwiki' as an alias for the 'markdown'
+" treesitter language so get_lang('vimwiki') resolves correctly.
+if has('nvim-0.9')
+	lua vim.treesitter.language.register('markdown', 'vimwiki')
+endif
+
 " Folding is owned by vimwiki (NOT vim-markdown-folding, which would conflict).
 " 'expr' folds sections + code blocks; 'list' also folds list subitems but is
 " much slower on large files.
