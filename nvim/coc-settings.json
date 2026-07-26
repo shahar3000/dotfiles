@@ -13,7 +13,6 @@
 			"server": true
 		}
 	},
-	"coc-list-mappings-custom": true,
 	"list": {
 		"previewSplitRight": true
 	},
@@ -35,7 +34,6 @@
 		"--clang-tidy",
 		"--completion-style=detailed",
 		"--header-insertion=iwyu",
-		"--cross-file-rename",
 		"--query-driver=/usr/bin/*gcc*,/usr/bin/*g++*,/usr/bin/*clang*,/opt/homebrew/**/gcc*,/opt/homebrew/**/g++*,/opt/homebrew/**/clang*,/usr/local/**/gcc*,/usr/local/**/g++*,/usr/local/**/clang*,/home/linuxbrew/**/gcc*,/home/linuxbrew/**/g++*,/home/linuxbrew/**/clang*",
 		"--enable-config",
 		"-j=8"
