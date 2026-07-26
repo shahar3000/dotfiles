@@ -33,8 +33,6 @@
 	follow = true
 [diff]
 	algorithm = minimal
-[blame]
-	ignoreRevsFile = .git-blame-ignore-revs
 [alias]
 	dag = log --graph --format='format:%C(yellow)%h%C(reset) %C(blue)\"%an\" <%ae>%C(reset) %C(magenta)%cr%C(reset)%C(auto)%d%C(reset)%n%s' --date-order
 	l = log --format='format:%C(auto, yellow)%h%C(reset) %C(auto, magenta)%cd%C(reset)%C(auto)%d%C(reset) %s %C(auto, green)%an%C(reset)' --color=always --date=short
