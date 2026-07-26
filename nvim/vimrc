@@ -192,6 +192,7 @@ else
 	set viminfo='100,<50,s10,h
 endif
 set relativenumber
+set cursorline                      " highlight the line the cursor is on
 set hidden
 set splitright
 set splitbelow
