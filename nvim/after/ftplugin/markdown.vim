@@ -9,9 +9,11 @@ function! s:VimWikiRg(query, bang) abort
 endfunction
 command! -bang -nargs=* VimWikiRg call s:VimWikiRg(<q-args>, <bang>0)
 
-" Search wiki tags/anchors. Buffer-local <leader>wg — 'wt' is taken by vimwiki's
-" own VimwikiTabIndex, so we use 'wg' (wiki-grep) to avoid overriding it.
-noremap <buffer> <leader>wg :VimWikiRg :[\-a-zA-Z0-9]\+:<CR>
+" Search wiki tags/anchors. Buffer-local <leader>W (wiki-grep). NOT <leader>wg:
+" that made <leader>w a strict prefix of it, so the global <leader>w (:Windows)
+" would stall for timeoutlen in every wiki buffer. Capital W avoids the prefix
+" clash and vimwiki's own 'wt' (VimwikiTabIndex).
+nnoremap <buffer> <leader>W :VimWikiRg :[\-a-zA-Z0-9]\+:<CR>
 
 setlocal spell
 " vimwiki syntax can trip the NFA regex engine (the default, re=0/'auto'); force
