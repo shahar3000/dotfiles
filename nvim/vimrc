@@ -217,10 +217,14 @@ if has("autocmd")
 	filetype plugin indent on
 endif
 
-highlight ExtraSpaces ctermbg=gray ctermfg=white
+" Highlights need BOTH cterm* (256-color) and gui* (termguicolors) colors — with
+" termguicolors on (our truecolor setup) the cterm* values are ignored, so gui*
+" must be set or these highlights render as no-ops (invisible trailing space /
+" no custom Search color).
+highlight ExtraSpaces ctermbg=gray ctermfg=white guibg=#665c54 guifg=#ebdbb2
 autocmd InsertEnter * match ExtraSpaces /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraSpaces /\s\+$/
-hi Search cterm=NONE ctermfg=black ctermbg=lightgreen
+hi Search cterm=NONE ctermfg=black ctermbg=lightgreen gui=NONE guifg=#282828 guibg=#b8bb26
 if &term =~ '256color'
   set t_ut=
 endif
