@@ -222,8 +222,11 @@ endif
 " must be set or these highlights render as no-ops (invisible trailing space /
 " no custom Search color).
 highlight ExtraSpaces ctermbg=gray ctermfg=white guibg=#665c54 guifg=#ebdbb2
-autocmd InsertEnter * match ExtraSpaces /\s\+\%#\@<!$/
-autocmd InsertLeave * match ExtraSpaces /\s\+$/
+augroup vimrc_extraspaces
+	autocmd!
+	autocmd InsertEnter * match ExtraSpaces /\s\+\%#\@<!$/
+	autocmd InsertLeave * match ExtraSpaces /\s\+$/
+augroup END
 hi Search cterm=NONE ctermfg=black ctermbg=lightgreen gui=NONE guifg=#282828 guibg=#b8bb26
 " Disable Background Color Erase so bg renders right in 256-color tmux/screen.
 " t_ut is a vim-only option (nvim has no such setting), so guard on !has('nvim').
@@ -330,7 +333,10 @@ nmap <leader>rn <Plug>(coc-rename)
 command! -nargs=0 Format :call CocAction('format')
 command! -nargs=? Fold :call CocAction('fold', <f-args>)
 command! -nargs=0 OR :call CocAction('runCommand', 'editor.action.organizeImport')
-autocmd CursorHold * silent call CocActionAsync('highlight')
+augroup vimrc_coc_highlight
+	autocmd!
+	autocmd CursorHold * silent call CocActionAsync('highlight')
+augroup END
 
 nnoremap <silent> <space>a :<C-u>CocList diagnostics<cr>
 nnoremap <silent> <space>e :<C-u>CocList extensions<cr>
@@ -348,10 +354,13 @@ nmap <silent> <leader>qf <Plug>(coc-fix-current)
 nnoremap <silent> <leader>ci :call CocAction('showIncomingCalls')<CR>
 nnoremap <silent> <leader>co :call CocAction('showOutgoingCalls')<CR>
 
-autocmd VimEnter * highlight link CocSemClass CocSemType
-autocmd VimEnter * highlight link CocSemStruct CocSemType
-autocmd VimEnter * highlight link CocSemMacro Macro
-autocmd VimEnter * highlight link CocSemEnumMember Constant
+augroup vimrc_coc_semtokens
+	autocmd!
+	autocmd VimEnter * highlight link CocSemClass CocSemType
+	autocmd VimEnter * highlight link CocSemStruct CocSemType
+	autocmd VimEnter * highlight link CocSemMacro Macro
+	autocmd VimEnter * highlight link CocSemEnumMember Constant
+augroup END
 
 " ============================================================================
 " vimspector — debugging (<leader>d* mappings)
