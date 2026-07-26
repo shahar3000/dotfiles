@@ -79,8 +79,9 @@ detect_env() {
 	# priv_step's root-eval path never runs a literal 'sudo'.
 	SUDO_PREFIX=""; [ "$IS_ROOT" = "1" ] || SUDO_PREFIX="sudo "
 	BREW_OK=0   # set to 1 by install_brew on success; gates brew-dependent steps
-	# candidate brew locations, incl. the user-local (no-sudo) prefix
-	BREW_LOCATIONS="/home/linuxbrew/.linuxbrew/bin/brew $HOME/.homebrew/bin/brew /opt/homebrew/bin/brew /usr/local/bin/brew"
+	# candidate brew locations, incl. the user-local (no-sudo) prefix. An array so
+	# a space in $HOME can't split an entry into two bogus paths (word-splitting).
+	BREW_LOCATIONS=(/home/linuxbrew/.linuxbrew/bin/brew "$HOME/.homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew)
 	info "OS=$OS  native-pm=${PM:-none}  wsl=$IS_WSL  root=$IS_ROOT"
 }
 
@@ -88,7 +89,7 @@ detect_env() {
 # but actually FUNCTIONAL (a partial/corrupt tree has the binary but can't run).
 load_brew() {
 	local b
-	for b in $BREW_LOCATIONS; do
+	for b in "${BREW_LOCATIONS[@]}"; do
 		if [ -x "$b" ] && "$b" --version >/dev/null 2>&1; then
 			eval "$("$b" shellenv)"
 			return 0
