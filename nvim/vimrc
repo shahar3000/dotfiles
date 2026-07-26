@@ -55,7 +55,14 @@ Plug 'junegunn/fzf.vim'
 Plug 'scrooloose/nerdtree'          " file tree
 Plug 'vim-airline/vim-airline'      " statusline (coc + git aware, auto-themed)
 Plug 'vim-airline/vim-airline-themes'
-Plug 'gruvbox-community/gruvbox'    " colorscheme (maintained fork of morhetz/gruvbox)
+" Colorscheme: nvim gets the Lua port (ellisonleao/gruvbox.nvim, treesitter-aware);
+" plain vim gets sainnhe/gruvbox-material (works in vim 8+ and ships its own airline
+" theme). Configured separately below under has('nvim'). Both need termguicolors.
+if has('nvim')
+	Plug 'ellisonleao/gruvbox.nvim'
+else
+	Plug 'sainnhe/gruvbox-material'
+endif
 Plug 'justinmk/vim-syntax-extra'    " better C syntax
 Plug 'ludovicchabant/vim-gutentags' " auto-manage ctags in background
 Plug 'inkarkat/vim-ingo-library'    " prerequisite of vim-mark
@@ -102,15 +109,31 @@ endif
 " Colorscheme & appearance
 " ============================================================================
 set background=dark
-let g:gruvbox_contrast_dark = 'medium'
-try
-	colorscheme gruvbox
-catch /^Vim\%((\a\+)\)\=:E185/
-	colorscheme elflord
-endtry
+if has('nvim')
+	" ellisonleao/gruvbox.nvim — Lua colorscheme. setup() MUST run before the
+	" colorscheme command. contrast: 'soft' | '' (medium) | 'hard'. pcall so a
+	" not-yet-installed plugin can't error out the whole vimrc.
+	lua pcall(function() require('gruvbox').setup({ contrast = '' }) end)
+	try
+		colorscheme gruvbox
+	catch /^Vim\%((\a\+)\)\=:E185/
+		colorscheme elflord
+	endtry
+else
+	" sainnhe/gruvbox-material — vimscript colorscheme (vim 8+). Needs
+	" termguicolors (set above only when the terminal supports true color).
+	let g:gruvbox_material_background = 'medium'   " 'soft' | 'medium' | 'hard'
+	let g:gruvbox_material_better_performance = 1
+	try
+		colorscheme gruvbox-material
+	catch /^Vim\%((\a\+)\)\=:E185/
+		colorscheme elflord
+	endtry
+endif
 
-" airline: use gruvbox theme, show coc status + git branch, powerline symbols.
-let g:airline_theme = 'gruvbox'
+" airline: nvim uses the vim-airline-themes 'gruvbox' theme; plain vim uses the
+" 'gruvbox_material' theme that ships inside the gruvbox-material plugin.
+let g:airline_theme = has('nvim') ? 'gruvbox' : 'gruvbox_material'
 let g:airline#extensions#coc#enabled = 1
 let g:airline#extensions#branch#enabled = 1
 let g:airline#extensions#tabline#enabled = 1
