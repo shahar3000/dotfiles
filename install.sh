@@ -482,10 +482,17 @@ install_vim_plugins() {
 	fi
 
 	if have nvim; then
-		info "installing nvim plugins (PlugInstall)"
-		nvim --headless +PlugInstall +qall 2>/dev/null || warn "PlugInstall had issues — run 'nvim +PlugInstall' manually"
+		# PlugUpdate = install any NEW plugins AND update existing ones (superset of
+		# PlugInstall), so re-running install.sh keeps plugins fresh. --sync forces
+		# it to finish before +qall (PlugUpdate is async by default and would
+		# otherwise be cut off in headless mode).
+		info "installing/updating nvim plugins (PlugUpdate)"
+		nvim --headless +'PlugUpdate --sync' +qall 2>/dev/null || warn "PlugUpdate had issues — run 'nvim +PlugUpdate' manually"
 	else
-		warn "nvim not installed — skipping PlugInstall"
+		# nvim is installed by install_tools (brew) earlier; reaching here means
+		# that step didn't complete — brew unavailable, SKIP_PACKAGES, or the
+		# neovim bottle failed. Nothing to update against, so skip and say why.
+		warn "nvim not on PATH (brew/tools step didn't complete) — skipping PlugUpdate"
 	fi
 }
 
