@@ -513,7 +513,10 @@ install_vim_plugins() {
 		# it to finish before +qall (PlugUpdate is async by default and would
 		# otherwise be cut off in headless mode).
 		info "installing/updating nvim plugins (PlugUpdate)"
-		nvim --headless +'PlugUpdate --sync' +qall 2>/dev/null || warn "PlugUpdate had issues — run 'nvim +PlugUpdate' manually"
+		# Don't suppress stderr — if a plugin fails to clone/build, the user needs
+		# to see why (the '|| warn' only fires on non-zero exit, and headless nvim
+		# can exit 0 with individual plugin errors).
+		nvim --headless +'PlugUpdate --sync' +qall || warn "PlugUpdate had issues — run 'nvim +PlugUpdate' manually"
 	else
 		# nvim is installed by install_tools (brew) earlier; reaching here means
 		# that step didn't complete — brew unavailable, SKIP_PACKAGES, or the
