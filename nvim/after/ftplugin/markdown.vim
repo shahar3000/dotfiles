@@ -13,7 +13,9 @@ command! -bang -nargs=* VimWikiRg call s:VimWikiRg(<q-args>, <bang>0)
 " that made <leader>w a strict prefix of it, so the global <leader>w (:Windows)
 " would stall for timeoutlen in every wiki buffer. Capital W avoids the prefix
 " clash and vimwiki's own 'wt' (VimwikiTabIndex).
-nnoremap <buffer> <leader>W :VimWikiRg :[\-a-zA-Z0-9]\+:<CR>
+" ripgrep uses Rust regex: '+' is one-or-more, '\+' is a LITERAL plus. Use '+'
+" (and a leading '-' in the class needs no escape) so it matches real :tag: anchors.
+nnoremap <buffer> <leader>W :VimWikiRg :[-a-zA-Z0-9]+:<CR>
 
 setlocal spell
 " vimwiki syntax can trip the NFA regex engine (the default, re=0/'auto'); force
