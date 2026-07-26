@@ -460,6 +460,23 @@ set_default_shell() {
 	fi
 }
 
+# pip-install a package into a specific python, handling PEP-668 "externally
+# managed" environments. Both brew python and modern distro python reject a plain
+# install; the escape hatches differ:
+#   - distro python: --user (into ~/.local) + --break-system-packages
+#   - brew  python: DISABLES --user, so needs --break-system-packages WITHOUT --user
+# Try each; first that succeeds wins.  pip_install_into <python> <pkg> <why>
+pip_install_into() {
+	local py="$1" pkg="$2" why="$3"
+	info "installing $pkg into $py ($why)"
+	if   "$py" -m pip install --quiet "$pkg"; then :
+	elif "$py" -m pip install --break-system-packages --quiet "$pkg"; then :
+	elif "$py" -m pip install --user --break-system-packages --quiet "$pkg"; then :
+	else
+		warn "$pkg install failed — try: $py -m pip install --break-system-packages $pkg"
+	fi
+}
+
 # ---------------------------------------------------------------------------
 # 6. vim-plug + nvim plugins
 # ---------------------------------------------------------------------------
@@ -478,33 +495,22 @@ install_vim_plugins() {
 			warn "vim-plug download failed or incomplete"; rm -f "$tmp"
 		fi
 	fi
-	# vimspector needs nvim's python3 provider -> the 'pynvim' module, installed
-	# into the SAME python3 nvim resolves. nvim uses the first python3 on PATH,
-	# which (with brew loaded) is brew's python3 — so target `command -v python3`
-	# rather than guessing a prefix. Ensure pip exists, then install pynvim.
+	# Install python packages into nvim's python3 (first python3 on PATH, which
+	# with brew loaded is brew's python3 — target `command -v python3`, don't guess
+	# a prefix). pynvim = vimspector's python3 provider; black = Python formatter
+	# used by coc-pyright's python.formatting.provider ("black") so :Format / F9
+	# actually formats .py files.
 	local py; py="$(command -v python3 || true)"
 	if [ -n "$py" ]; then
-		info "installing pynvim into $py (vimspector)"
 		"$py" -m ensurepip --upgrade >/dev/null 2>&1 || true   # some pythons ship pip lazily
-		# Both brew python and modern distro python are PEP-668 "externally managed"
-		# and reject a plain install. Two escape hatches, and they differ:
-		#   - distro python: --user (into ~/.local) + --break-system-packages
-		#   - brew  python: DISABLES --user, so it needs --break-system-packages WITHOUT --user
-		# Try each; the first that succeeds wins.
-		if   "$py" -m pip install --quiet pynvim; then :
-		elif "$py" -m pip install --break-system-packages --quiet pynvim; then :
-		elif "$py" -m pip install --user --break-system-packages --quiet pynvim; then :
-		else
-			warn "pynvim install failed — try: $py -m pip install --break-system-packages pynvim"
-		fi
-		# verify it actually imports in the python nvim will use
-		if "$py" -c 'import pynvim' 2>/dev/null; then
-			info "pynvim OK in $py"
-		else
-			warn "pynvim still not importable by $py — vimspector will report 'Requires +python3'."
-		fi
+		pip_install_into "$py" pynvim "vimspector's python3 provider"
+		pip_install_into "$py" black  "Python formatter for coc-pyright (:Format/F9)"
+		# verify pynvim actually imports in the python nvim will use
+		"$py" -c 'import pynvim' 2>/dev/null \
+			&& info "pynvim OK in $py" \
+			|| warn "pynvim still not importable by $py — vimspector will report 'Requires +python3'."
 	else
-		warn "python3 not found — vimspector needs it + pynvim for debugging."
+		warn "python3 not found — vimspector (pynvim) and Python formatting (black) unavailable."
 	fi
 
 	if have nvim; then
