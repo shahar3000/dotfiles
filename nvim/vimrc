@@ -225,7 +225,9 @@ highlight ExtraSpaces ctermbg=gray ctermfg=white guibg=#665c54 guifg=#ebdbb2
 autocmd InsertEnter * match ExtraSpaces /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraSpaces /\s\+$/
 hi Search cterm=NONE ctermfg=black ctermbg=lightgreen gui=NONE guifg=#282828 guibg=#b8bb26
-if &term =~ '256color'
+" Disable Background Color Erase so bg renders right in 256-color tmux/screen.
+" t_ut is a vim-only option (nvim has no such setting), so guard on !has('nvim').
+if !has('nvim') && &term =~ '256color'
   set t_ut=
 endif
 set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
