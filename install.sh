@@ -291,6 +291,13 @@ install_font() {
 		return
 	fi
 	if [ "$OS" = "macos" ]; then
+		# macOS font install is a brew cask — needs a working brew. Gate on BREW_OK
+		# so a failed brew step yields a clean message, not 'brew: command not found'.
+		if [ "$BREW_OK" != "1" ]; then
+			warn "Homebrew unavailable — install '$FONT_FAMILY' manually (see README)."
+			return
+		fi
+		load_brew
 		if brew list --cask font-jetbrains-mono-nerd-font >/dev/null 2>&1; then
 			info "Nerd Font present (brew cask)"
 		else
