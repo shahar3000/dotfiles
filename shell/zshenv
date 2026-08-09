@@ -4,6 +4,11 @@
 # and which do NOT source .zprofile. This makes brew/go/cargo tools reliably
 # visible to the detection blocks in .zshrc.
 
+# ---- user-local binaries (~/.local/bin): pip --user installs, win32yank.exe
+# (WSL nvim clipboard bridge), etc. Explicit because nothing else adds this for
+# zsh — Debian's ~/.profile does it, but only for bash login shells.
+export PATH="$HOME/.local/bin:$PATH"
+
 # ---- Homebrew (macOS / Linuxbrew / user-local), first one present wins ----
 # `brew shellenv` is a Ruby startup (~200-500ms) and this file is sourced by EVERY
 # shell, incl. non-interactive `zsh -c`. Its output is static (only brew's paths),

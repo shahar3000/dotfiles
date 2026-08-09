@@ -64,6 +64,19 @@ it, so do this once on Windows:
 Until then everything still works — you'll just see tofu boxes where icons/
 triangle separators should be.
 
+### Clipboard on WSL
+
+`install.sh` installs `win32yank.exe` into `~/.local/bin` as the clipboard
+bridge nvim's `unnamedplus` (see `nvim/vimrc`) needs to reach the Windows
+clipboard. If yanking/pasting in nvim fails with a `win32yank.exe` error
+about `VCRUNTIME140.dll` not found, the Windows side is missing the
+Visual C++ runtime that binary was built with — install it once on Windows
+(not inside WSL):
+
+1. Download and run <https://aka.ms/vc14/vc_redist.x64.exe>.
+2. Restart WSL so interop picks up the new DLLs: from PowerShell,
+   `wsl --shutdown`, then reopen your WSL terminal.
+
 ## Layout
 
 | Path | Purpose |

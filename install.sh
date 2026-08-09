@@ -11,6 +11,7 @@
 #   1. ensure brew prerequisites (curl/git/unzip/compiler) — admin step if missing
 #   2. install Homebrew (canonical /home/linuxbrew when possible, else ~/.homebrew)
 #   3. brew install CLI tools + node + language servers
+#   3c. WSL only: install win32yank (nvim system-clipboard bridge)
 #   4. install zim (zsh loader); starship/fzf/zoxide come from brew
 #   5. make zsh the login shell (sudo usermod, else a guarded ~/.bashrc hand-off)
 #   6. install vim-plug + nvim plugins
@@ -328,6 +329,40 @@ install_font() {
 		fi
 		rm -rf "$tmp"
 	fi
+}
+
+# ---------------------------------------------------------------------------
+# 3c. win32yank (WSL clipboard bridge for nvim). vimrc's `set clipboard+=
+#     unnamedplus` only takes effect when nvim finds a clipboard provider
+#     binary on PATH (has('clipboard')) — on WSL that's win32yank.exe, which
+#     bridges to the Windows clipboard via WSL's binfmt_misc interop. Not a
+#     brew formula, so fetched directly from its GitHub release, like
+#     vim-plug/zim/the font below. Installed into ~/.local/bin, which zshenv
+#     puts on PATH for every shell.
+# ---------------------------------------------------------------------------
+install_win32yank() {
+	[ "${SKIP_PACKAGES:-0}" = "1" ] && return
+	[ "$IS_WSL" = "1" ] || return
+	local dest_dir="$HOME/.local/bin"
+	# Check the destination file directly, not `have` (a PATH lookup) — this
+	# function's own install target isn't guaranteed to be on PATH yet in the
+	# shell running install.sh (only ~/.zshenv adds it, for future shells).
+	[ -x "$dest_dir/win32yank.exe" ] && { info "win32yank present"; return; }
+	have curl  || { warn "curl missing — cannot install win32yank (nvim clipboard won't work)"; return; }
+	have unzip || { warn "unzip missing — cannot install win32yank (nvim clipboard won't work)"; return; }
+	info "installing win32yank (WSL clipboard bridge for nvim)"
+	mkdir -p "$dest_dir"
+	local tmp; tmp="$(mktemp -d "${TMPDIR:-/tmp}/win32yank.XXXXXX")"
+	if curl -fsSL -o "$tmp/win32yank.zip" \
+		https://github.com/equalsraf/win32yank/releases/latest/download/win32yank-x64.zip \
+		&& ( cd "$tmp" && unzip -oq win32yank.zip win32yank.exe ); then
+		mv "$tmp/win32yank.exe" "$dest_dir/win32yank.exe"
+		chmod +x "$dest_dir/win32yank.exe"
+		info "installed win32yank.exe -> $dest_dir"
+	else
+		warn "win32yank download/extract failed — nvim clipboard won't work on WSL until installed manually"
+	fi
+	rm -rf "$tmp"
 }
 
 # ---------------------------------------------------------------------------
@@ -681,6 +716,7 @@ main() {
 	install_brew
 	install_tools
 	install_font
+	install_win32yank
 	install_zim
 	install_vim_plugins    # after link_configs so nvim sees its config
 	set_default_shell
