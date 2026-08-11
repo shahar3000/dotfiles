@@ -1,3 +1,4 @@
+onboarding = false
 # ~/.config/herdr/config.toml — herdr (agent multiplexer) config.
 # Bindings mirror the tmux setup where it matters; herdr's defaults already match
 # most of it (Ctrl-b prefix, h/j/k/l pane nav, z zoom, c new tab, [ copy-mode).
