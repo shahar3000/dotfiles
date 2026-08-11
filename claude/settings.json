@@ -1,15 +1,29 @@
 {
-  "includeCoAuthoredBy": false,
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh"
-  },
+  "advisorModel": "opus",
   "enabledPlugins": {
+    "clangd-lsp@claude-plugins-official": true,
     "gopls-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "clangd-lsp@claude-plugins-official": true,
     "ruby-lsp@claude-plugins-official": true
   },
-  "theme": "dark",
-  "advisorModel": "opus"
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bash '/home/shahar/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ]
+  },
+  "includeCoAuthoredBy": false,
+  "statusLine": {
+    "command": "~/.claude/statusline.sh",
+    "type": "command"
+  },
+  "theme": "dark"
 }

@@ -12,6 +12,7 @@
 #   2. install Homebrew (canonical /home/linuxbrew when possible, else ~/.homebrew)
 #   3. brew install CLI tools + node + language servers
 #   3c. WSL only: install win32yank (nvim system-clipboard bridge)
+#   3d. wire herdr's Claude Code integration (pane <-> agent-session tracking)
 #   4. install zim (zsh loader); starship/fzf/zoxide come from brew
 #   5. make zsh the login shell (sudo usermod, else a guarded ~/.bashrc hand-off)
 #   6. install vim-plug + nvim plugins
@@ -366,6 +367,21 @@ install_win32yank() {
 }
 
 # ---------------------------------------------------------------------------
+# 3d. herdr's Claude Code integration. Writes ~/.claude/hooks/herdr-agent-state.sh
+#     (a SessionStart hook that reports the running Claude session to herdr over
+#     its socket, so it can track which pane is running which agent session) and
+#     registers that hook in ~/.claude/settings.json — which link_configs has
+#     already symlinked to this repo's claude/settings.json, so this runs after
+#     it. `herdr integration install` is idempotent (checks its embedded version
+#     against what's installed), safe to re-run every time.
+# ---------------------------------------------------------------------------
+install_herdr_integration() {
+	have herdr || return
+	info "wiring herdr's Claude Code integration"
+	herdr integration install claude || warn "herdr integration install claude failed"
+}
+
+# ---------------------------------------------------------------------------
 # 4. zim (zsh plugin loader). starship/zoxide/fzf came from brew above.
 # ---------------------------------------------------------------------------
 install_zim() {
@@ -717,6 +733,7 @@ main() {
 	install_tools
 	install_font
 	install_win32yank
+	install_herdr_integration
 	install_zim
 	install_vim_plugins    # after link_configs so nvim sees its config
 	set_default_shell
