@@ -27,11 +27,11 @@ style = "green bold"
 style = "blue bold"
 truncation_length = 4
 truncate_to_repo = true
-read_only = " "             # nf-fa-lock
+read_only = " "             # nf-fa-lock
 
 # ---- git ----
 [git_branch]
-symbol = " "                # nf-fa-code_branch
+symbol = " "                # nf-fa-code_branch
 style = "purple bold"
 
 [git_status]
@@ -53,19 +53,19 @@ stashed = "${count} "     # nf-fa-inbox (was starship default '$' — the red
 
 # ---- languages / tools: shown only in relevant projects, with logos ----
 [nodejs]
-symbol = " "                # nf-dev-nodejs_small
+symbol = " "                # nf-dev-nodejs_small
 [python]
-symbol = " "                # nf-dev-python
+symbol = " "                # nf-dev-python
 [golang]
-symbol = " "                # nf-seti-go / go gopher
+symbol = " "                # nf-seti-go / go gopher
 [rust]
-symbol = " "                # nf-dev-rust
+symbol = " "                # nf-dev-rust
 [c]
-symbol = " "
+symbol = " "                # nf-dev-c
 [java]
-symbol = " "
+symbol = " "                # nf-dev-java
 [ruby]
-symbol = " "
+symbol = " "                # nf-dev-ruby
 [package]
 symbol = "󰏗 "                # nf-md-package_variant
 disabled = true              # off by default (noisy); flip to false if you want it
