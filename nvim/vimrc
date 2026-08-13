@@ -151,7 +151,18 @@ if has('nvim')
 	    },
 	    sections = {
 	      lualine_b = { 'branch', 'diff', { 'diagnostics', sources = { 'coc' } } },
-	      lualine_x = { 'g:coc_status', 'encoding', 'fileformat', 'filetype' },
+	      lualine_x = {
+	        -- F12 toggles these (see below). Hidden, not shown empty, while
+	        -- off. Colored like 'branch', not red/yellow — those are coc's
+	        -- diagnostics right next to this.
+	        { function() return 'PASTE' end,
+	          cond = function() return vim.o.paste end,
+	          color = { fg = '#ebdbb2' } },
+	        { function() return 'SPELL' end,
+	          cond = function() return vim.wo.spell end,
+	          color = { fg = '#ebdbb2' } },
+	        'g:coc_status', 'encoding', 'fileformat', 'filetype'
+	      },
 	    },
 	    tabline = {
 	      lualine_a = { { 'buffers', mode = 2 } },   -- name + number, like airline tabline
@@ -229,6 +240,12 @@ augroup vimrc_extraspaces
 	autocmd InsertLeave * match ExtraSpaces /\s\+$/
 augroup END
 hi Search cterm=NONE ctermfg=black ctermbg=lightgreen gui=NONE guifg=#282828 guibg=#b8bb26
+" gruvbox's Spell* groups are undercurl-only (no fg change) — barely
+" renders through a WSL -> tmux -> Windows Terminal chain. Add a real color.
+hi SpellBad   cterm=underline,bold ctermfg=red     gui=underline,bold guifg=#fb4934
+hi SpellCap   cterm=underline,bold ctermfg=blue    gui=underline,bold guifg=#83a598
+hi SpellLocal cterm=underline,bold ctermfg=cyan    gui=underline,bold guifg=#8ec07c
+hi SpellRare  cterm=underline,bold ctermfg=magenta gui=underline,bold guifg=#d3869b
 " Disable Background Color Erase so bg renders right in 256-color tmux/screen.
 " t_ut is a vim-only option (nvim has no such setting), so guard on !has('nvim').
 if !has('nvim') && &term =~ '256color'
@@ -460,6 +477,24 @@ function! NerdTreeToggle()
 	endif
 endfunction
 nmap <F10> :call NerdTreeToggle()<CR>
+
+" F12 = toggle 'paste' (verbatim paste, no autoindent mangling) + 'spell'
+" together. Persists across inserts until pressed again. Turning OFF only
+" works from Normal mode: 'paste' disables insert-mode mappings while on
+" (coc's <Tab> and Copilot's <C-l> too, meanwhile), so an insert-mode
+" "turn it off" mapping can't work. Shown live in the statusline (airline
+" has this built in; lualine doesn't, hence the PASTE/SPELL components above).
+function! ToggleWriteMode()
+	if &spell
+		set nospell
+		set nopaste
+	else
+		set spell
+		set paste
+	endif
+endfunction
+nnoremap <silent> <F12> :call ToggleWriteMode()<CR>
+inoremap <silent> <F12> <C-o>:call ToggleWriteMode()<CR>  " only while 'paste' is off
 
 nmap gb :Git blame<CR>
 nmap gs :vertical G show<CR>
