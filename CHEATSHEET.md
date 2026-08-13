@@ -75,6 +75,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `,F` | toggle clang-format-on-save |
 | open `file.c:42` | jumps to line 42 (vim-fetch) |
 | `F11` | toggle `paste`+`spell` together (normal & insert mode) |
+| `Ctrl-l` (insert, Copilot suggestion showing) | accept Copilot's ghost-text suggestion — opt-in, see README |
 
 ### Marks — multi-color highlighting (vim-mark)
 Highlight several words at once, each in its own color — great for tracing

@@ -107,6 +107,18 @@ instead of ever getting an actual `^C` there. Free them both up on Windows
 `Ctrl+Shift+C` / `Ctrl+Shift+V` (or `Shift+Insert` to paste) — those bindings
 are untouched.
 
+## Copilot (optional)
+
+[`github/copilot.vim`](https://github.com/github/copilot.vim) adds inline AI
+ghost-text completion alongside coc — different job (generated code vs coc's
+verified LSP completion), so both run together. Needs a subscription (Free
+tier works), so it's **opt-in**: `install.sh` asks once and remembers the
+answer in `~/.vimrc.local` (`g:copilot_enabled`); flip that and re-run
+`./install.sh` to change your mind.
+
+First use: `:Copilot setup` once inside nvim to authenticate. `<Tab>` stays
+coc's; Copilot accepts on `<C-l>`.
+
 ## Layout
 
 | Path | Purpose |
@@ -129,8 +141,9 @@ are untouched.
 
 ## Notes
 
-- **git identity, vimwiki path, tmux clipboard** are prompted by `install.sh` and
-  stored in untracked local files (`~/.gitconfig.local` — pulled in via `[include]`
-  from the tracked gitconfig — `~/.vimrc.local`, `~/.tmux.local.conf`).
+- **git identity, vimwiki path, Copilot opt-in, tmux clipboard** are prompted by
+  `install.sh` and stored in untracked local files (`~/.gitconfig.local` — pulled
+  in via `[include]` from the tracked gitconfig — `~/.vimrc.local`,
+  `~/.tmux.local.conf`).
 - **Machine-local zsh overrides** go in `~/.zshrc.local` (untracked, sourced last).
 - Re-run `./install.sh` any time — it only does what's missing.

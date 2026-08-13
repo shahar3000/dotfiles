@@ -17,7 +17,7 @@
 #   5. make zsh the login shell (sudo usermod, else a guarded ~/.bashrc hand-off)
 #   6. install vim-plug + nvim plugins
 #   7. symlink dotfiles into $HOME (timestamped backups)
-#   8. prompt for git identity / vimwiki path / tmux clipboard (TTY only)
+#   8. prompt for git identity / vimwiki path / Copilot opt-in / tmux clipboard (TTY only)
 #
 # Usage: ./install.sh            (full run)
 #        SKIP_PACKAGES=1 ./install.sh   (only symlink + local config; no installs)
@@ -661,6 +661,30 @@ configure_vimwiki() {
 	info "wrote ~/.vimrc.local"
 }
 
+# Copilot inline AI completion -> ~/.vimrc.local (untracked; opt-in, since it
+# needs a GitHub Copilot subscription). MUST run after configure_vimwiki:
+# both write ~/.vimrc.local, and configure_vimwiki's own gate is "does the
+# file exist at all" — if this ran first and created it, vimwiki's prompt
+# would silently never fire.
+configure_copilot() {
+	grep -q '^let g:copilot_enabled' "$HOME/.vimrc.local" 2>/dev/null && return
+	local reply enable=0
+	if [ -t 0 ]; then
+		read -r -p ">> enable Copilot inline AI completion in vim/nvim? [y/N]: " reply || reply=""
+		case "$reply" in [yY]*) enable=1 ;; esac
+	fi
+	echo "let g:copilot_enabled = $enable" >> "$HOME/.vimrc.local"
+	if [ "$enable" = "1" ]; then
+		info "enabled Copilot in ~/.vimrc.local"
+		# Targeted fetch so it's usable from this same run, without re-running
+		# install_vim_plugins' full PlugUpdate (which already ran earlier in
+		# main() and would otherwise re-check every plugin, not just this one).
+		have nvim && { nvim --headless +'PlugInstall --sync' +qall \
+			|| warn "PlugInstall for copilot.vim failed — run 'nvim +PlugInstall' manually"; }
+		info "run :Copilot setup once inside nvim to authenticate"
+	fi
+}
+
 # map a clipboard target name -> the external command tmux pipes copies to.
 # (osc52 and none are handled specially in configure_tmux_clipboard, not here.)
 clipboard_cmd_for() {
@@ -741,6 +765,7 @@ main() {
 	# machine-local (interactive) settings
 	configure_git_identity
 	configure_vimwiki
+	configure_copilot        # after configure_vimwiki — see its comment
 	configure_tmux_clipboard
 
 	echo

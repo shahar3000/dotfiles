@@ -83,6 +83,15 @@ Plug 'tpope/vim-sleuth'             " auto-detect indentation per file
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " C++/Python/Go IDE
 
+" AI ghost-text completion. Opt-in: install.sh prompts once and sets
+" g:copilot_enabled in ~/.vimrc.local (or set it yourself before this line
+" runs). g:copilot_no_tab_map keeps <Tab> on coc's completion menu; Copilot
+" accepts on <C-l> instead. Run :Copilot setup once to authenticate.
+if get(g:, 'copilot_enabled', 0)
+  Plug 'github/copilot.vim'
+  let g:copilot_no_tab_map = v:true
+endif
+
 " Debugging
 Plug 'puremourning/vimspector'      " step-debugger for C++/Python/Go
 Plug 'rhysd/vim-clang-format'       " clang-format integration
@@ -254,6 +263,13 @@ if has('nvim')
   inoremap <silent><expr> <c-space> coc#refresh()
 else
   inoremap <silent><expr> <c-@> coc#refresh()
+endif
+
+if get(g:, 'copilot_enabled', 0)
+  " ============================================================================
+  " copilot.vim — AI ghost-text completion
+  " ============================================================================
+  imap <silent><script><expr> <C-l> copilot#Accept("")
 endif
 
 " (statusline coc status: airline updates it automatically on vim; lualine reads
