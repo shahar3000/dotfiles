@@ -77,6 +77,36 @@ Visual C++ runtime that binary was built with — install it once on Windows
 2. Restart WSL so interop picks up the new DLLs: from PowerShell,
    `wsl --shutdown`, then reopen your WSL terminal.
 
+### Windows Terminal steals Ctrl+V / Ctrl+C from vim
+
+Windows Terminal binds plain `Ctrl+V` to its own paste action and plain
+`Ctrl+C` to copy-if-selected, both by default — so they never reach the app
+running inside WSL. That breaks vim's builtin `Ctrl+V` (blockwise-visual
+mode), and `Ctrl+C` is worse: if you have leftover selected text (e.g. from a
+mouse drag) when you mean to kill a stuck process, Windows Terminal copies
+instead of sending the interrupt, silently leaving the process running
+instead of ever getting an actual `^C` there. Free them both up on Windows
+(not inside WSL):
+
+1. Windows Terminal → `Ctrl+,` → open `settings.json` (bottom-left) → find
+   the `keybindings`/`actions` entries binding `ctrl+c`/`ctrl+v` (they look
+   like `{ "id": "Terminal.CopyToClipboard", "keys": "ctrl+c" }` and
+   `{ "id": "Terminal.PasteFromClipboard", "keys": "ctrl+v" }`) and delete
+   both entries outright.
+   - If your file has no such entries (some Windows Terminal versions only
+     store *overrides* there, with the actual defaults hidden elsewhere),
+     add unbind overrides instead — same effect:
+     ```json
+     { "id": null, "keys": "ctrl+v" },
+     { "id": null, "keys": "ctrl+c" }
+     ```
+2. Save — Windows Terminal reloads config automatically, no restart needed.
+
+`Ctrl+V`/`Ctrl+C` now always go straight to whatever's running in the pane
+(vim, a shell command, etc). Copy/paste still work exactly as before via
+`Ctrl+Shift+C` / `Ctrl+Shift+V` (or `Shift+Insert` to paste) — those bindings
+are untouched.
+
 ## Layout
 
 | Path | Purpose |
