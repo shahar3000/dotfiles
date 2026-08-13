@@ -461,6 +461,20 @@ function! NerdTreeToggle()
 endfunction
 nmap <F10> :call NerdTreeToggle()<CR>
 
+" F11 = toggle 'paste' (no autoindent/mapping mangling on external paste) and
+" 'spell' together — on for pasting/writing prose, off for normal code editing.
+function! ToggleWriteMode()
+	if &paste
+		set nopaste
+		set nospell
+	else
+		set paste
+		set spell
+	endif
+endfunction
+nnoremap <silent> <F11> :call ToggleWriteMode()<CR>
+inoremap <silent> <F11> <C-o>:call ToggleWriteMode()<CR>
+
 nmap gb :Git blame<CR>
 nmap gs :vertical G show<CR>
 " vimagit — magit-style staging/commit UI (stage hunks, commit, all in one buffer)

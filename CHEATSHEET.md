@@ -74,6 +74,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `gc` | comment/uncomment (motion: `gcc` line, `gcap` paragraph) — vim-commentary |
 | `,F` | toggle clang-format-on-save |
 | open `file.c:42` | jumps to line 42 (vim-fetch) |
+| `F11` | toggle `paste`+`spell` together (normal & insert mode) |
 
 ### Marks — multi-color highlighting (vim-mark)
 Highlight several words at once, each in its own color — great for tracing
