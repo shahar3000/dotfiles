@@ -249,8 +249,8 @@ install_tools() {
 	# zsh via brew so we never depend on a system zsh (prereqs may be skipped).
 	# vim AND neovim: shared vimrc uses modern features; brew's vim is current.
 	# node = coc/LSP + markdown-preview build. python = clean latest Python that
-	# nvim's python3 provider picks up (brew's bin is first on PATH via zshenv), so
-	# pynvim installs there without the distro's PEP-668 restriction.
+	# nvim's python3 provider picks up (brew's bin is first on PATH via zshenv).
+	# Homebrew marks Python as externally managed, handled by pip_install_into.
 	brew install -y \
 		zsh vim neovim node python \
 		git-delta bat fzf ripgrep jq universal-ctags eza zoxide \
@@ -512,20 +512,38 @@ set_default_shell() {
 }
 
 # pip-install a package into a specific python, handling PEP-668 "externally
-# managed" environments. Both brew python and modern distro python reject a plain
-# install; the escape hatches differ:
-#   - distro python: --user (into ~/.local) + --break-system-packages
-#   - brew  python: DISABLES --user, so needs --break-system-packages WITHOUT --user
-# Try each; first that succeeds wins.  pip_install_into <python> <pkg> <why>
+# managed" environments without first printing an expected failure. Install into
+# a writable managed prefix (Homebrew) or the user site for a read-only distro
+# prefix. pip_install_into <python> <pkg> <why>
 pip_install_into() {
-	local py="$1" pkg="$2" why="$3"
+	local py="$1" pkg="$2" why="$3" python_state
 	info "installing $pkg into $py ($why)"
-	if   "$py" -m pip install --quiet "$pkg"; then :
-	elif "$py" -m pip install --break-system-packages --quiet "$pkg"; then :
-	elif "$py" -m pip install --user --break-system-packages --quiet "$pkg"; then :
-	else
-		warn "$pkg install failed — try: $py -m pip install --break-system-packages $pkg"
-	fi
+
+	python_state="$("$py" -c '
+import os, sys, sysconfig
+marker = os.path.join(sysconfig.get_path("stdlib"), "EXTERNALLY-MANAGED")
+managed = sys.prefix == sys.base_prefix and os.path.isfile(marker)
+print("managed-writable" if managed and os.access(sysconfig.get_path("purelib"), os.W_OK)
+      else "managed-readonly" if managed else "unmanaged")
+' 2>/dev/null || true)"
+
+	case "$python_state" in
+		managed-writable)
+			"$py" -m pip install --break-system-packages --quiet "$pkg" && return
+			"$py" -m pip install --user --break-system-packages --quiet "$pkg" && return
+			;;
+		managed-readonly)
+			"$py" -m pip install --user --break-system-packages --quiet "$pkg" && return
+			"$py" -m pip install --break-system-packages --quiet "$pkg" && return
+			;;
+		*)
+			"$py" -m pip install --quiet "$pkg" && return
+			"$py" -m pip install --break-system-packages --quiet "$pkg" && return
+			"$py" -m pip install --user --break-system-packages --quiet "$pkg" && return
+			;;
+	esac
+
+	warn "$pkg install failed — try: $py -m pip install --break-system-packages $pkg"
 }
 
 # ---------------------------------------------------------------------------
