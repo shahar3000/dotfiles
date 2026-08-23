@@ -104,7 +104,17 @@ Plug 'rhysd/vim-clang-format'       " clang-format integration
 
 " Notes (vimwiki) + markdown
 Plug 'vimwiki/vimwiki'
-Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' } " live md preview
+if has('win32') || has('win64')
+  function! DotfilesInstallMarkdownPreview()
+    call mkdp#util#install_sync(v:true)
+    if empty(mkdp#util#pre_build_version())
+      throw 'markdown-preview.nvim Windows binary installation failed'
+    endif
+  endfunction
+  Plug 'iamcco/markdown-preview.nvim', { 'do': { -> DotfilesInstallMarkdownPreview() } }
+else
+  Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
+endif
 Plug 'bullets-vim/bullets.vim'      " list/checkbox automation (scoped below, NOT in vimwiki)
 
 " vim-mark: suppress its default maps BEFORE the plugin loads (at plug#end),

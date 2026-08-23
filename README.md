@@ -1,11 +1,60 @@
 # dotfiles
 
-Personal dev environment: nvim, zsh, tmux, git, Claude Code. Linux-first,
-macOS-aware. Built on **vim-plug + coc.nvim** (not lazy.nvim/native-LSP — a
-deliberate choice; coc gives full C++/Python/Go IDE support with minimal setup).
-zsh via **zim** (fast loader) + **starship** prompt.
+Personal dev environment: nvim, zsh/PowerShell, tmux/Herdr, git, Claude Code.
+Supports native Windows as well as Linux, macOS, and WSL. Built on
+**vim-plug + coc.nvim** (not lazy.nvim/native-LSP — a deliberate choice; coc
+gives full C++/Python/Go IDE support with minimal setup). Unix shells use
+**zsh** via **zim**; Windows uses **PowerShell 7**; both use **starship**.
+
+## Native Windows
+
+The Windows setup runs directly on Windows without WSL, MSYS2, or Cygwin.
+Open PowerShell and run:
+
+```powershell
+winget install --id Git.Git --exact --source winget --accept-package-agreements --accept-source-agreements
+$env:Path = @(
+  [Environment]::GetEnvironmentVariable("Path", "Machine"),
+  [Environment]::GetEnvironmentVariable("Path", "User")
+) -join ";"
+git clone https://github.com/shahar3000/dotfiles.git "$HOME\dotfiles"
+Set-Location "$HOME\dotfiles"
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+The installer is idempotent and:
+
+1. installs Windows Terminal, PowerShell 7, Git, Neovim, Starship, Herdr,
+   Claude Code, Copilot CLI, language runtimes, compilers, CLI tools, and
+   JetBrainsMono Nerd Font through winget or the official Herdr installer;
+2. links the Windows configuration, backing up conflicting files first;
+3. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
+4. configures Claude Code's status line without replacing other Claude settings;
+5. installs Herdr's Claude integration.
+
+The Windows PowerShell bootstrap installs PowerShell 7 and relaunches the setup
+there, allowing unprivileged symbolic links when Windows Developer Mode is
+enabled. Otherwise, the installer uses hard links and directory junctions,
+falling back to copies only when linking is unavailable. Re-run the installer
+after every pull unless its output says all managed paths are symbolic links;
+Git replaces files during pulls, so hard links and copies must be refreshed. Use
+`.\install.ps1 -SkipPackages` to relink configuration without package installs,
+or add `-SkipPlugins` to avoid network-dependent plugin updates.
+
+After installation, restart Windows Terminal, select its **PowerShell 7**
+profile, and set **JetBrainsMono Nerd Font Mono** under profile Appearance.
+Launch the complete pane/agent environment with:
+
+```powershell
+herdr
+```
+
+Herdr replaces tmux natively through Windows ConPTY while retaining this
+repository's `Ctrl+B` pane, tab, navigation, zoom, and Gruvbox configuration.
 
 ## Install
+
+### Linux, macOS, and WSL
 
 ```bash
 git clone https://github.com/shahar3000/dotfiles.git ~/dotfiles && ~/dotfiles/install.sh
@@ -130,13 +179,17 @@ coc's; Copilot accepts on `<C-l>`.
 | `vimspector/` | per-language debug config templates (copy to project as `.vimspector.json`) |
 | `shell/zshrc`, `shell/zshenv` | zsh config (`zshenv` = env/PATH for all shells) |
 | `shell/zimrc` | zim module list (plugins: autosuggestions, fast-syntax-highlighting, fzf-tab, history-substring-search) |
+| `powershell/Microsoft.PowerShell_profile.ps1` | native Windows shell profile (PSReadLine, Starship, zoxide, aliases) |
 | `starship/starship.toml` | prompt config (Nerd Font icons; symlinked to `~/.config/starship.toml`) |
 | `tmux/tmux.conf` | tmux config |
-| `herdr/config.toml` | herdr (agent multiplexer) config — gruvbox theme, tmux-like keys (symlinked to `~/.config/herdr/config.toml`) |
+| `herdr/config.toml` | Linux/macOS herdr config — Gruvbox theme and tmux-like keys |
+| `herdr/config.windows.toml` | native Windows Herdr config — PowerShell 7 through ConPTY |
 | `git/gitconfig` | git config + delta |
 | `git/gitignore_global` | global gitignore (symlinked to `~/.gitignore` via `core.excludesfile`) — tags, editor/OS cruft |
 | `claude/settings.json` | Claude Code settings (portable subset; use your own Anthropic account) |
 | `claude/statusline.sh` | custom statusline (symlinked to `~/.claude/statusline.sh`; needs `jq`) |
+| `claude/statusline.ps1` | native Windows Claude Code status line |
+| `install.ps1` | idempotent native Windows provisioning and configuration |
 | `CHEATSHEET.md` | keybindings per tool |
 
 ## Notes

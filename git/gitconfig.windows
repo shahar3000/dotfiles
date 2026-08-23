@@ -1,0 +1,46 @@
+# Native Windows Git configuration. Identity stays in ~/.gitconfig.local.
+[include]
+	path = ~/.gitconfig.local
+
+[merge]
+	conflictstyle = diff3
+[rerere]
+	enabled = 1
+[grep]
+	linenumber = true
+[fetch]
+	prune = true
+[rebase]
+	autostash = true
+[color]
+	ui = auto
+[core]
+	pager = delta
+	editor = nvim
+	excludesfile = ~/.gitignore
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+[push]
+	default = simple
+[init]
+	defaultBranch = main
+[log]
+	follow = true
+[diff]
+	algorithm = minimal
+[credential]
+	helper = manager
+[alias]
+	dag = log --graph --format='format:%C(yellow)%h%C(reset) %C(blue)\"%an\" <%ae>%C(reset) %C(magenta)%cr%C(reset)%C(auto)%d%C(reset)%n%s' --date-order
+	l = log --format='format:%C(auto,yellow)%h%C(reset) %C(auto,magenta)%cd%C(reset)%C(auto)%d%C(reset) %s %C(auto,green)%an%C(reset)' --color=always --date=short
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)%an%Creset' --abbrev-commit --date=relative
+	st = status
+	co = checkout
+	br = branch
+	ci = commit
+	df = diff
+	dc = diff --cached
+	diff-side = -c delta.features=side-by-side diff

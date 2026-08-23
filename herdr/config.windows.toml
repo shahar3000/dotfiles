@@ -1,0 +1,22 @@
+onboarding = false
+
+[terminal]
+default_shell = "pwsh.exe"
+shell_mode = "non_login"
+
+[theme]
+name = "gruvbox"
+auto_switch = false
+
+[theme.custom]
+accent = "#d79921"
+yellow = "#d79921"
+green = "#b8bb26"
+red = "#cc241d"
+blue = "#458588"
+
+[keys]
+split_vertical = "prefix+|"
+
+[ui]
+agent_panel_sort = "spaces"
