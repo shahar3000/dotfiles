@@ -83,12 +83,18 @@ Plug 'tpope/vim-sleuth'             " auto-detect indentation per file
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " C++/Python/Go IDE
 
-" AI ghost-text completion. Opt-in: install.sh prompts once and sets
+" AI completion and chat. Opt-in: install.sh prompts once and sets
 " g:copilot_enabled in ~/.vimrc.local (or set it yourself before this line
 " runs). g:copilot_no_tab_map keeps <Tab> on coc's completion menu; Copilot
 " accepts on <C-l> instead. Run :Copilot setup once to authenticate.
 if get(g:, 'copilot_enabled', 0)
   Plug 'github/copilot.vim'
+  if has('nvim')
+    Plug 'nvim-lua/plenary.nvim'
+    Plug 'CopilotC-Nvim/CopilotChat.nvim'
+  else
+    Plug 'DanBradbury/copilot-chat.vim'
+  endif
   let g:copilot_no_tab_map = v:true
 endif
 
@@ -106,6 +112,21 @@ Plug 'bullets-vim/bullets.vim'      " list/checkbox automation (scoped below, NO
 let g:mw_no_mappings = 1
 
 call plug#end()
+
+if get(g:, 'copilot_enabled', 0) && has('nvim')
+  lua << EOF
+pcall(function()
+  require('CopilotChat').setup({
+    mappings = {
+      reset = {
+        normal = '<C-_>',
+        insert = '<C-_>',
+      },
+    },
+  })
+end)
+EOF
+endif
 
 " ============================================================================
 " gutentags — keep tag files OUT of project repos

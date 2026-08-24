@@ -27,6 +27,26 @@ DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 info() { printf '\033[1;34m>>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$*"; }
 have() { command -v "$1" >/dev/null 2>&1; }
+is_regular_vim() {
+	[ -x "$1" ] && "$1" --version 2>/dev/null | grep -q '^VIM - Vi IMproved'
+}
+find_regular_vim() {
+	local candidate="" prefix=""
+	if have brew; then
+		prefix="$(brew --prefix vim 2>/dev/null || true)"
+		candidate="$prefix/bin/vim"
+		is_regular_vim "$candidate" && { printf '%s\n' "$candidate"; return 0; }
+	fi
+	candidate="$(type -P vim 2>/dev/null || true)"
+	is_regular_vim "$candidate" && { printf '%s\n' "$candidate"; return 0; }
+	return 1
+}
+curl_major_version() {
+	local version
+	version="$("$1" --version 2>/dev/null)"
+	version="${version#curl }"
+	printf '%s\n' "${version%%.*}"
+}
 
 # The "Do you want to proceed? [y/n]" prompt is suppressed by passing `-y` to each
 # `brew install` (below). This env var is unrelated to prompts: it stops a slow
@@ -256,6 +276,38 @@ install_tools() {
 		git-delta bat fzf ripgrep jq universal-ctags eza zoxide \
 		starship tmux herdr gopls \
 		|| warn "some brew packages failed — check output above"
+
+	# CopilotChat.nvim requires curl 8+. Homebrew's curl is keg-only on platforms
+	# that ship curl, and `brew install` does not upgrade an existing stale keg.
+	# Upgrade it explicitly when needed, then prefer it only after verification.
+	local brew_curl="${HOMEBREW_PREFIX:-}/opt/curl/bin/curl"
+	local brew_curl_major=""
+	if [ -x "$brew_curl" ]; then
+		brew_curl_major="$(curl_major_version "$brew_curl")"
+		case "$brew_curl_major" in
+			''|*[!0-9]*) ;;
+			*) if [ "$brew_curl_major" -lt 8 ]; then
+				info "upgrading Homebrew curl (CopilotChat.nvim requires curl 8+)"
+				brew update && brew upgrade curl || warn "Homebrew curl upgrade failed"
+			fi ;;
+		esac
+	else
+		info "installing curl 8+ for CopilotChat.nvim"
+		brew install -y curl || warn "Homebrew curl install failed"
+	fi
+
+	brew_curl_major=""
+	[ -x "$brew_curl" ] && brew_curl_major="$(curl_major_version "$brew_curl")"
+	case "$brew_curl_major" in
+		''|*[!0-9]*) ;;
+		*) [ "$brew_curl_major" -ge 8 ] && export PATH="${brew_curl%/curl}:$PATH" ;;
+	esac
+	local active_curl_major=""
+	have curl && active_curl_major="$(curl_major_version "$(command -v curl)")"
+	case "$active_curl_major" in
+		''|*[!0-9]*) warn "curl version could not be determined — CopilotChat.nvim requires curl 8+" ;;
+		*) [ "$active_curl_major" -ge 8 ] || warn "curl $active_curl_major is too old — CopilotChat.nvim requires curl 8+" ;;
+	esac
 
 	# llvm (full toolchain: clang-format, clang-tidy, lldb, and C++ clangd) is
 	# installed on its OWN command, AFTER the core tools — it's several GB, so
@@ -547,11 +599,11 @@ print("managed-writable" if managed and os.access(sysconfig.get_path("purelib"),
 }
 
 # ---------------------------------------------------------------------------
-# 6. vim-plug + nvim plugins
+# 6. vim-plug + Vim/Neovim plugins
 # ---------------------------------------------------------------------------
 install_vim_plugins() {
 	[ "${SKIP_PACKAGES:-0}" = "1" ] && return
-	load_brew  # make sure brew-installed nvim is on PATH before we look for it
+	load_brew  # make sure brew-installed Vim/Neovim are on PATH before we look for them
 	local plug="$HOME/.vim/autoload/plug.vim"
 	# Re-fetch unless the existing plug.vim looks complete (guards a truncated file).
 	if ! { [ -s "$plug" ] && grep -q 'plug#begin' "$plug" 2>/dev/null; }; then
@@ -591,12 +643,27 @@ install_vim_plugins() {
 		# Don't suppress stderr — if a plugin fails to clone/build, the user needs
 		# to see why (the '|| warn' only fires on non-zero exit, and headless nvim
 		# can exit 0 with individual plugin errors).
-		nvim --headless +'PlugUpdate --sync' +qall || warn "PlugUpdate had issues — run 'nvim +PlugUpdate' manually"
+		nvim --headless --noplugin +'PlugUpdate --sync' +qall \
+			|| warn "Neovim PlugUpdate had issues — run 'nvim +PlugUpdate' manually"
 	else
 		# nvim is installed by install_tools (brew) earlier; reaching here means
 		# that step didn't complete — brew unavailable, SKIP_PACKAGES, or the
 		# neovim bottle failed. Nothing to update against, so skip and say why.
-		warn "nvim not on PATH (brew/tools step didn't complete) — skipping PlugUpdate"
+		warn "nvim not on PATH (brew/tools step didn't complete) — skipping Neovim PlugUpdate"
+	fi
+
+	# The shared vimrc declares a different Copilot Chat plugin for regular Vim.
+	# Run vim-plug through Vim too so that branch is discovered and installed.
+	# --noplugin prevents an unauthenticated chat plugin from prompting while this
+	# non-interactive installer is updating it.
+	local vim_bin=""
+	vim_bin="$(find_regular_vim || true)"
+	if [ -n "$vim_bin" ]; then
+		info "installing/updating vim plugins (PlugUpdate)"
+		"$vim_bin" --not-a-term --noplugin +'PlugUpdate --sync' +qall \
+			|| warn "Vim PlugUpdate had issues — run 'vim +PlugUpdate' manually"
+	else
+		warn "regular Vim binary not found (vim may resolve to Neovim) — skipping Vim PlugUpdate"
 	fi
 }
 
@@ -679,16 +746,16 @@ configure_vimwiki() {
 	info "wrote ~/.vimrc.local"
 }
 
-# Copilot inline AI completion -> ~/.vimrc.local (untracked; opt-in, since it
-# needs a GitHub Copilot subscription). MUST run after configure_vimwiki:
+# Copilot AI completion/chat -> ~/.vimrc.local (untracked; opt-in, since they
+# need a GitHub Copilot subscription). MUST run after configure_vimwiki:
 # both write ~/.vimrc.local, and configure_vimwiki's own gate is "does the
 # file exist at all" — if this ran first and created it, vimwiki's prompt
 # would silently never fire.
 configure_copilot() {
 	grep -q '^let g:copilot_enabled' "$HOME/.vimrc.local" 2>/dev/null && return
-	local reply enable=0
+	local reply enable=0 vim_bin=""
 	if [ -t 0 ]; then
-		read -r -p ">> enable Copilot inline AI completion in vim/nvim? [y/N]: " reply || reply=""
+		read -r -p ">> enable Copilot AI completion and chat in vim/nvim? [y/N]: " reply || reply=""
 		case "$reply" in [yY]*) enable=1 ;; esac
 	fi
 	echo "let g:copilot_enabled = $enable" >> "$HOME/.vimrc.local"
@@ -697,9 +764,12 @@ configure_copilot() {
 		# Targeted fetch so it's usable from this same run, without re-running
 		# install_vim_plugins' full PlugUpdate (which already ran earlier in
 		# main() and would otherwise re-check every plugin, not just this one).
-		have nvim && { nvim --headless +'PlugInstall --sync' +qall \
-			|| warn "PlugInstall for copilot.vim failed — run 'nvim +PlugInstall' manually"; }
-		info "run :Copilot setup once inside nvim to authenticate"
+		have nvim && { nvim --headless --noplugin +'PlugInstall --sync' +qall \
+			|| warn "Neovim Copilot plugin install failed — run 'nvim +PlugInstall' manually"; }
+		vim_bin="$(find_regular_vim || true)"
+		[ -n "$vim_bin" ] && { "$vim_bin" --not-a-term --noplugin +'PlugInstall --sync' +qall \
+			|| warn "Vim Copilot plugin install failed — run 'vim +PlugInstall' manually"; }
+		info "run :Copilot setup once inside Vim or Neovim to authenticate"
 	fi
 }
 

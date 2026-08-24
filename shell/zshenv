@@ -43,6 +43,20 @@ for _brew in \
 done
 unset _brew
 
+# Homebrew's curl is keg-only when the OS ships one. Prefer its binary only
+# after confirming it meets CopilotChat.nvim's curl 8+ requirement.
+_brew_curl="${HOMEBREW_PREFIX:-}/opt/curl/bin/curl"
+if [ -x "$_brew_curl" ]; then
+	_brew_curl_version="$("$_brew_curl" --version 2>/dev/null)"
+	_brew_curl_version="${_brew_curl_version#curl }"
+	_brew_curl_major="${_brew_curl_version%%.*}"
+	case "$_brew_curl_major" in
+		''|*[!0-9]*) ;;
+		*) [ "$_brew_curl_major" -ge 8 ] && export PATH="${_brew_curl%/curl}:$PATH" ;;
+	esac
+fi
+unset _brew_curl _brew_curl_version _brew_curl_major
+
 # ---- default editor for all shells + tools (git, crontab, etc.) ----
 # AFTER the brew shellenv loop so a brew-only nvim/vim is on PATH before we probe.
 # In zshenv (not zshrc) so non-interactive tools honor it too. Prefer nvim, then
