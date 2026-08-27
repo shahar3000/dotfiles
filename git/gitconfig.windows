@@ -44,3 +44,6 @@
 	df = diff
 	dc = diff --cached
 	diff-side = -c delta.features=side-by-side diff
+	# Git for Windows runs shell aliases through its bundled POSIX shell.
+	# Rebase onto the remote's real default branch, with main/master fallbacks.
+	r = "!f() { git fetch origin; b=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'); [ -z \"$b\" ] && git rev-parse -q --verify origin/main >/dev/null && b=main; [ -z \"$b\" ] && b=master; git rebase \"origin/$b\"; }; f"

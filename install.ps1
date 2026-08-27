@@ -202,7 +202,12 @@ function Install-GitConfig([string]$Source, [string]$Destination) {
     if ($null -ne $existing) {
         $isReparsePoint = ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
         if ($isReparsePoint) {
-            Remove-Item -LiteralPath $Destination -Force
+            $hasTarget = $existing.PSObject.Properties.Name -contains "Target"
+            if ($hasTarget -and ($existing.Target -contains $Source)) {
+                Remove-Item -LiteralPath $Destination -Force
+            } else {
+                Backup-Path $Destination
+            }
             $existing = $null
         } elseif (-not $existing.PSIsContainer) {
             $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash

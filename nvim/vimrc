@@ -129,8 +129,9 @@ let g:mw_no_mappings = 1
 
 call plug#end()
 
-if get(g:, 'copilot_enabled', 0) && has('nvim')
-  lua << EOF
+if get(g:, 'copilot_enabled', 0)
+  if has('nvim')
+    lua << EOF
 pcall(function()
   require('CopilotChat').setup({
     mappings = {
@@ -142,6 +143,7 @@ pcall(function()
   })
 end)
 EOF
+  endif
   nnoremap <silent> <F2> :CopilotChatToggle<CR>
   inoremap <silent> <F2> <C-o>:CopilotChatToggle<CR>
 endif

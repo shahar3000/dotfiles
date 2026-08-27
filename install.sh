@@ -271,7 +271,7 @@ install_tools() {
 	# node = coc/LSP + markdown-preview build. python = clean latest Python that
 	# nvim's python3 provider picks up (brew's bin is first on PATH via zshenv).
 	# Homebrew marks Python as externally managed, handled by pip_install_into.
-	brew install -y \
+	brew install \
 		zsh vim neovim node python \
 		git-delta bat fzf ripgrep jq universal-ctags eza zoxide \
 		starship tmux herdr gopls \
@@ -293,7 +293,7 @@ install_tools() {
 		esac
 	else
 		info "installing curl 8+ for CopilotChat.nvim"
-		brew install -y curl || warn "Homebrew curl install failed"
+		brew install curl || warn "Homebrew curl install failed"
 	fi
 
 	brew_curl_major=""
@@ -315,7 +315,7 @@ install_tools() {
 	# essentials above (brew resolves a combined line's graph in any order).
 	if ! brew list llvm >/dev/null 2>&1; then
 		info "installing llvm (C++ toolchain: clangd/clang-format/clang-tidy; several GB)"
-		if ! brew install -y llvm; then
+		if ! brew install llvm; then
 			warn "=================================================================="
 			warn "llvm FAILED to install (most likely: not enough disk space —"
 			warn "llvm needs ~3-5 GB). This is NON-FATAL: nvim/node/etc. are fine,"
@@ -356,7 +356,7 @@ install_font() {
 			info "Nerd Font present (brew cask)"
 		else
 			info "installing Nerd Font (brew cask)"
-			brew install -y --cask font-jetbrains-mono-nerd-font || warn "font cask install failed"
+			brew install --cask font-jetbrains-mono-nerd-font || warn "font cask install failed"
 		fi
 		warn "Set your terminal font to '$FONT_FAMILY' (Terminal/iTerm settings)."
 		return
