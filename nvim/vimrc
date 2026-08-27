@@ -142,6 +142,8 @@ pcall(function()
   })
 end)
 EOF
+  nnoremap <silent> <F2> :CopilotChatToggle<CR>
+  inoremap <silent> <F2> <C-o>:CopilotChatToggle<CR>
 endif
 
 " ============================================================================
@@ -488,7 +490,8 @@ command! -bang -nargs=* FGrep
 	\	'git grep --line-number --no-heading --color=always -- '.shellescape(<q-args>), 0,
 	\	fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
 
-nmap <F2> :call coc#float#close_all()<CR>
+nnoremap <silent> <C-k> :call coc#float#close_all()<CR>
+inoremap <silent> <C-k> <C-o>:call coc#float#close_all()<CR>
 nmap <F3> :Rg<CR>
 nmap <F4> :Rg <C-R>=expand("<cword>")<CR><CR>
 nmap <F5> :FGrep<CR>

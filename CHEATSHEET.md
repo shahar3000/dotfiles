@@ -68,7 +68,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `Ctrl-w z` | **zoom** current split fullscreen (toggle) — like tmux prefix z |
 | `Shift-arrows` | move across vim splits **and** tmux panes (tmux-navigator) |
 | `F10` | NERDTree toggle (finds current file) |
-| `F2` | close all coc floating windows |
+| `Ctrl-k` | close all coc floating windows in Normal or Insert mode |
 
 ### Editing
 | Key | Action |
@@ -76,6 +76,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `gc` | comment/uncomment (motion: `gcc` line, `gcap` paragraph) — vim-commentary |
 | `,F` | toggle clang-format-on-save |
 | open `file.c:42` | jumps to line 42 (vim-fetch) |
+| `F2` | toggle Copilot Chat in Normal or Insert mode (when enabled) |
 | `F12` | toggle `paste`+`spell` together (verbatim-paste code blocks, no autoindent mangling) — shown in the statusline while on. Persists across inserts until you press `F12` again; turning it back **off** only works from Normal mode |
 | `Ctrl-l` (insert, Copilot suggestion showing) | accept Copilot's ghost-text suggestion — opt-in, see README |
 
