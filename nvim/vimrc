@@ -87,7 +87,12 @@ Plug 'tpope/vim-sleuth'             " auto-detect indentation per file
 
 " LSP / completion (coc). coc auto-installs these language servers on first launch:
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " C++/Python/Go IDE
+if !exists('g:coc_data_home') && !empty($COC_DATA_HOME)
+  let g:coc_data_home = $COC_DATA_HOME
+endif
+if empty($DOTFILES_COC_INSTALLING)
+  let g:coc_global_extensions = ['coc-clangd', 'coc-pyright', 'coc-go']  " C++/Python/Go IDE
+endif
 
 " AI completion and chat. Opt-in: install.sh prompts once and sets
 " g:copilot_enabled in ~/.vimrc.local (or set it yourself before this line

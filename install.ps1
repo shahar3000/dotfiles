@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [switch]$SkipPackages,
-    [switch]$SkipPlugins
+    [switch]$SkipPlugins,
+    [string]$ExpectedUserProfile
 )
 
 Set-StrictMode -Version Latest
@@ -21,6 +22,18 @@ function Write-Utf8NoBom([string]$Path, [string]$Content) {
     [IO.File]::WriteAllText($Path, $Content, $encoding)
 }
 
+function Test-IsAdministrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    try {
+        $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+        return $principal.IsInRole(
+            [Security.Principal.WindowsBuiltInRole]::Administrator
+        )
+    } finally {
+        $identity.Dispose()
+    }
+}
+
 function Refresh-ProcessPath {
     $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -37,6 +50,15 @@ function Add-UserPath([string]$Path) {
         Write-Info "added to user PATH: $normalized"
     }
     Refresh-ProcessPath
+}
+
+function Get-CocExtensionRoot {
+    $dataHome = if ($env:COC_DATA_HOME) {
+        $env:COC_DATA_HOME
+    } else {
+        Join-Path $env:LOCALAPPDATA "coc"
+    }
+    return Join-Path $dataHome "extensions\node_modules"
 }
 
 function Install-WingetPackage([string]$Id, [string]$Name) {
@@ -119,11 +141,7 @@ function Assert-WorkingEnvironment([switch]$SkipPluginChecks) {
             }
         }
 
-        $cocExtensionRoot = if ($env:COC_DATA_HOME) {
-            Join-Path $env:COC_DATA_HOME "extensions\node_modules"
-        } else {
-            Join-Path $env:LOCALAPPDATA "coc\extensions\node_modules"
-        }
+        $cocExtensionRoot = Get-CocExtensionRoot
         foreach ($extension in @("coc-clangd", "coc-pyright", "coc-go")) {
             if (-not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $extension))) {
                 $missing.Add("coc extension:$extension")
@@ -388,6 +406,34 @@ if ($platform -ne [PlatformID]::Win32NT) {
     throw "install.ps1 is for native Windows. Use install.sh on Linux, macOS, or WSL."
 }
 
+if ($ExpectedUserProfile -and
+    -not $HOME.TrimEnd("\").Equals(
+        $ExpectedUserProfile.TrimEnd("\"),
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+    throw "Setup was elevated as a different Windows user. Run it from an Administrator PowerShell session belonging to the account being configured."
+}
+
+if (-not $SkipPackages -and -not (Test-IsAdministrator)) {
+    # WinGet 1.28 can fail its per-installer UAC handoff with an Explorer
+    # "no app associated" dialog. Elevating once avoids that broken path.
+    Write-Info "requesting Administrator access for package installation"
+    $hostExecutable = (Get-Process -Id $PID).Path
+    $arguments = "-NoLogo -NoProfile -ExecutionPolicy Bypass " +
+        "-File `"$PSCommandPath`" -ExpectedUserProfile `"$HOME`""
+    if ($SkipPlugins) {
+        $arguments += " -SkipPlugins"
+    }
+
+    try {
+        $process = Start-Process -FilePath $hostExecutable -Verb RunAs `
+            -ArgumentList $arguments -Wait -PassThru
+    } catch {
+        throw "Administrator approval is required for package installation: $($_.Exception.Message)"
+    }
+    exit $process.ExitCode
+}
+
 # Node 22.19+/24.6+ can trust enterprise roots from the Windows certificate
 # store. coc.nvim inherits this and can install extensions behind TLS proxies.
 $env:NODE_USE_SYSTEM_CA = "1"
@@ -597,16 +643,36 @@ print(sysconfig.get_path('scripts', scheme='nt_user'))
     }
 
     if (Get-Command nvim -ErrorAction SilentlyContinue) {
-        & nvim --headless "+PlugUpdate --sync" "+qall"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warn "Neovim plugin installation had errors; run nvim +PlugUpdate manually"
+        $cocExtensionRoot = Get-CocExtensionRoot
+        $previousCocInstalling = $env:DOTFILES_COC_INSTALLING
+        $env:DOTFILES_COC_INSTALLING = "1"
+        try {
+            & nvim --headless "+PlugUpdate --sync" "+qall"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "Neovim plugin installation had errors; run nvim +PlugUpdate manually"
+            }
+
+            $missingCocExtensions = @(
+                "coc-clangd", "coc-pyright", "coc-go" |
+                    Where-Object {
+                        -not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $_))
+                    }
+            )
+            if ($missingCocExtensions.Count -gt 0) {
+                $cocInstallCommand = "CocInstall -sync $($missingCocExtensions -join ' ')"
+                & nvim --headless "+$cocInstallCommand" "+qall"
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Warn "coc extension installation had errors; run :$cocInstallCommand"
+                }
+            }
+        } finally {
+            if ($null -eq $previousCocInstalling) {
+                Remove-Item Env:DOTFILES_COC_INSTALLING -ErrorAction SilentlyContinue
+            } else {
+                $env:DOTFILES_COC_INSTALLING = $previousCocInstalling
+            }
         }
 
-        $cocExtensionRoot = if ($env:COC_DATA_HOME) {
-            Join-Path $env:COC_DATA_HOME "extensions\node_modules"
-        } else {
-            Join-Path $env:LOCALAPPDATA "coc\extensions\node_modules"
-        }
         $missingCocExtensions = @(
             "coc-clangd", "coc-pyright", "coc-go" |
                 Where-Object {
@@ -614,12 +680,9 @@ print(sysconfig.get_path('scripts', scheme='nt_user'))
                 }
         )
         if ($missingCocExtensions.Count -gt 0) {
-            $cocInstallCommand = "CocInstall -sync $($missingCocExtensions -join ' ')"
-            & nvim --headless "+$cocInstallCommand" "+qall"
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warn "coc extension installation had errors; run :$cocInstallCommand"
-            }
+            Write-Warn "coc extensions were not installed: $($missingCocExtensions -join ', ')"
         }
+
         $markdownPreviewRoot = Join-Path $HOME ".vim\plugged\markdown-preview.nvim"
         $markdownPreview = Join-Path $markdownPreviewRoot `
             "app\bin\markdown-preview-win.exe"

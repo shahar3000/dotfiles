@@ -12,7 +12,8 @@ The Windows setup runs directly on Windows without WSL, MSYS2, or Cygwin.
 It requires an internet connection and **App Installer / winget** (included
 with current Windows 10/11 installations). The bootstrap installs Git first
 because the repository cannot clone itself.
-Open PowerShell and run:
+Open PowerShell **as Administrator** using the Windows account being configured,
+then run:
 
 ```powershell
 winget install --id Git.Git --exact --source winget --accept-package-agreements --accept-source-agreements
@@ -24,6 +25,12 @@ git clone https://github.com/shahar3000/dotfiles.git "$HOME\dotfiles"
 Set-Location "$HOME\dotfiles"
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
+
+If launched from a non-elevated terminal, the installer requests Administrator
+approval once before running winget. This avoids a Windows Package Manager bug
+that can otherwise display repeated Explorer "no app associated" dialogs while
+elevating individual MSI packages. Approve the prompt using the same Windows
+account being configured.
 
 The installer is idempotent and:
 
