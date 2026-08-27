@@ -29,12 +29,12 @@
 			"cpp"
 		]
 	},
+	"clangd.path": "C:/Program Files/LLVM/bin/clangd.exe",
 	"clangd.arguments": [
 		"--background-index",
 		"--clang-tidy",
 		"--completion-style=detailed",
 		"--header-insertion=iwyu",
-		"--query-driver=C:/Program Files/LLVM/bin/clang*.exe,C:/Program Files/Microsoft Visual Studio/*/*/VC/Tools/MSVC/*/bin/Hostx64/x64/cl.exe",
 		"--enable-config",
 		"-j=8"
 	],
