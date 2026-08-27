@@ -61,6 +61,46 @@ function Get-CocExtensionRoot {
     return Join-Path $dataHome "extensions\node_modules"
 }
 
+function Get-MissingCocExtensions([string]$ExtensionRoot) {
+    return @(
+        "coc-clangd", "coc-pyright", "coc-go" |
+            Where-Object {
+                -not (Test-Path -LiteralPath (Join-Path $ExtensionRoot $_))
+            }
+    )
+}
+
+function Install-CocExtensionsWithNpm(
+    [string]$ExtensionRoot,
+    [string[]]$Extensions
+) {
+    if ($Extensions.Count -eq 0) {
+        return
+    }
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        Write-Warn "npm is unavailable; cannot retry coc extension installation"
+        return
+    }
+
+    $extensionHome = Split-Path -Parent $ExtensionRoot
+    New-Item -ItemType Directory -Force -Path $extensionHome | Out-Null
+    $packagePath = Join-Path $extensionHome "package.json"
+    if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
+        Write-Utf8NoBom $packagePath "{`n  `"dependencies`": {}`n}`n"
+    }
+
+    Write-Info "retrying coc extensions with the configured npm client"
+    Push-Location $extensionHome
+    try {
+        & npm install --no-audit --no-fund --package-lock=false @Extensions
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "npm coc extension installation returned exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+    }
+}
+
 function Install-WingetPackage([string]$Id, [string]$Name) {
     & winget list --id $Id --exact --accept-source-agreements --disable-interactivity *> $null
     if ($LASTEXITCODE -eq 0) {
@@ -142,10 +182,8 @@ function Assert-WorkingEnvironment([switch]$SkipPluginChecks) {
         }
 
         $cocExtensionRoot = Get-CocExtensionRoot
-        foreach ($extension in @("coc-clangd", "coc-pyright", "coc-go")) {
-            if (-not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $extension))) {
-                $missing.Add("coc extension:$extension")
-            }
+        foreach ($extension in @(Get-MissingCocExtensions $cocExtensionRoot)) {
+            $missing.Add("coc extension:$extension")
         }
 
         $markdownPreview = Join-Path $HOME `
@@ -652,12 +690,7 @@ print(sysconfig.get_path('scripts', scheme='nt_user'))
                 Write-Warn "Neovim plugin installation had errors; run nvim +PlugUpdate manually"
             }
 
-            $missingCocExtensions = @(
-                "coc-clangd", "coc-pyright", "coc-go" |
-                    Where-Object {
-                        -not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $_))
-                    }
-            )
+            $missingCocExtensions = @(Get-MissingCocExtensions $cocExtensionRoot)
             if ($missingCocExtensions.Count -gt 0) {
                 $cocInstallCommand = "CocInstall -sync $($missingCocExtensions -join ' ')"
                 & nvim --headless "+$cocInstallCommand" "+qall"
@@ -673,14 +706,14 @@ print(sysconfig.get_path('scripts', scheme='nt_user'))
             }
         }
 
-        $missingCocExtensions = @(
-            "coc-clangd", "coc-pyright", "coc-go" |
-                Where-Object {
-                    -not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $_))
-                }
-        )
+        $missingCocExtensions = @(Get-MissingCocExtensions $cocExtensionRoot)
         if ($missingCocExtensions.Count -gt 0) {
-            Write-Warn "coc extensions were not installed: $($missingCocExtensions -join ', ')"
+            Write-Warn "coc's downloader failed; retrying through npm"
+            Install-CocExtensionsWithNpm $cocExtensionRoot $missingCocExtensions
+            $missingCocExtensions = @(Get-MissingCocExtensions $cocExtensionRoot)
+        }
+        if ($missingCocExtensions.Count -gt 0) {
+            Write-Warn "coc extensions remain missing: $($missingCocExtensions -join ', ')"
         }
 
         $markdownPreviewRoot = Join-Path $HOME ".vim\plugged\markdown-preview.nvim"
