@@ -9,6 +9,9 @@ gives full C++/Python/Go IDE support with minimal setup). Unix shells use
 ## Native Windows
 
 The Windows setup runs directly on Windows without WSL, MSYS2, or Cygwin.
+It requires an internet connection and **App Installer / winget** (included
+with current Windows 10/11 installations). The bootstrap installs Git first
+because the repository cannot clone itself.
 Open PowerShell and run:
 
 ```powershell
@@ -25,12 +28,16 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 The installer is idempotent and:
 
 1. installs Windows Terminal, PowerShell 7, Git, Neovim, Starship, Herdr,
-   Claude Code, Copilot CLI, language runtimes, compilers, CLI tools, and
-   JetBrainsMono Nerd Font through winget or the official Herdr installer;
+   posh-git completion, PSFzf history search, Claude Code, Copilot CLI,
+   language runtimes, compilers, CLI tools, and JetBrainsMono Nerd Font through
+   winget, PowerShell Gallery, or the official Herdr installer;
 2. links the Windows configuration, backing up conflicting files first;
-3. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
-4. configures Claude Code's status line without replacing other Claude settings;
-5. installs Herdr's Claude integration.
+3. prewarms PowerShell 7's Starship and zoxide startup cache;
+4. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
+5. configures Claude Code's status line without replacing other Claude settings;
+6. installs Herdr's Claude integration;
+7. validates required commands, PowerShell modules, editor plugins, coc language
+   extensions, and the markdown-preview binary before reporting success.
 
 The Windows PowerShell bootstrap installs PowerShell 7 and relaunches the setup
 there, allowing unprivileged symbolic links when Windows Developer Mode is
@@ -43,6 +50,9 @@ or add `-SkipPlugins` to avoid network-dependent plugin updates.
 
 After installation, restart Windows Terminal, select its **PowerShell 7**
 profile, and set **JetBrainsMono Nerd Font Mono** under profile Appearance.
+Git identity and service authentication remain intentionally personal: configure
+`~/.gitconfig.local`, then sign in to Claude Code, Copilot CLI, and
+`:Copilot setup` in nvim if you enable the optional editor integration.
 Launch the complete pane/agent environment with:
 
 ```powershell
@@ -161,9 +171,12 @@ are untouched.
 [`github/copilot.vim`](https://github.com/github/copilot.vim) adds inline AI
 ghost-text completion alongside coc — different job (generated code vs coc's
 verified LSP completion), so both run together. Needs a subscription (Free
-tier works), so it's **opt-in**: `install.sh` asks once and remembers the
-answer in `~/.vimrc.local` (`g:copilot_enabled`); flip that and re-run
-`./install.sh` to change your mind.
+tier works), so it's **opt-in**: both platform installers ask once and remember
+the answer in `~/.vimrc.local` (`g:copilot_enabled`). Flip that value and re-run
+the relevant installer to change your mind.
+
+On native Windows, `install.ps1` also installs the separate GitHub Copilot CLI
+through winget. CLI and editor authentication remain separate.
 
 First use: `:Copilot setup` once inside nvim to authenticate. `<Tab>` stays
 coc's; Copilot accepts on `<C-l>`.

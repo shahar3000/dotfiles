@@ -48,7 +48,13 @@ Plug 'tpope/vim-fugitive'           " :Git, :Gvdiffsplit, :Git blame
 Plug 'jreybert/vimagit'             " magit-style staging/commit UI
 
 " Fuzzy find
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+if has('win32') || has('win64')
+	" Native Windows gets fzf from winget; its interactive installer hangs in
+	" headless PlugUpdate runs.
+	Plug 'junegunn/fzf'
+else
+	Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+endif
 Plug 'junegunn/fzf.vim'
 
 " Navigation / UI
@@ -179,7 +185,9 @@ endif
 if has('nvim')
 	" lualine: themes itself off the active colorscheme (theme='auto' picks up
 	" gruvbox.nvim). Shows git branch/diff, coc diagnostics, and coc's status
-	" string. Tabline (buffers) mirrors airline's tabline on the vim side.
+	" string. The top-left tabline entries are buffers; top-right entries are
+	" actual tab pages. `gt` navigates the latter, while `[b` / `]b` below
+	" navigate the visible buffer entries.
 	" pcall so a not-yet-installed plugin can't error the whole vimrc.
 	lua << EOF
 	pcall(function()
@@ -457,6 +465,10 @@ let $FZF_DEFAULT_OPTS="--preview-window 'right:55%'
 nmap <Leader>p :Files<CR>
 nmap <leader>b :Buffers<CR>
 nmap <leader>w :Windows<CR>
+if !has('nvim')
+	nnoremap <silent> [b :bprevious<CR>
+	nnoremap <silent> ]b :bnext<CR>
+endif
 nmap <leader>T :Tags<CR>
 nmap <leader>BT :BTags<CR>
 nmap <leader>C :Commits<CR>

@@ -10,8 +10,10 @@ Keybindings & commands **this config actually defines**. Leader is `,`.
 | Key | Action |
 |-----|--------|
 | `,p` | `:Files` — fuzzy find files |
-| `,b` | `:Buffers` |
-| `,w` | `:Windows` |
+| `,b` | `:Buffers` — list the buffer entries shown at the top-left |
+| `[b` / `]b` | previous / next buffer (built into Neovim; configured here for Vim) |
+| `,w` | `:Windows` — list actual splits, not buffers |
+| `gT` / `gt` | previous / next tab page (shown at the top-right) |
 | `,T` | `:Tags` (project) · `,BT` buffer tags |
 | `,L` / `,BL` | `:Lines` / buffer lines · `,gl` = BLines on word under cursor |
 | `F3` | `:Rg` (ripgrep search) · `F4` = Rg on word under cursor |
@@ -160,6 +162,15 @@ Defaults mirror tmux; only `split_vertical` is remapped to `|` for parity.
 | `rezsh` | reload zshenv + zshrc |
 
 Prompt: **starship** (async git branch/status, fast in large repos). Loader: **zim**.
+
+## PowerShell 7
+
+| Key | Action |
+|-----|--------|
+| `Tab` | open completion menu for commands, files/directories, and arguments |
+| `Shift-Tab` | move backward through completion choices |
+| `Ctrl-r` | fuzzy-search persistent command history with fzf |
+| `git … Tab` | Git commands, branches, remotes, tags, and paths (posh-git loads on first use) |
 
 ---
 

@@ -27,6 +27,18 @@ function Refresh-ProcessPath {
     $env:Path = (@($machinePath, $userPath) | Where-Object { $_ }) -join ";"
 }
 
+function Add-UserPath([string]$Path) {
+    $normalized = $Path.TrimEnd("\")
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $entries = @($userPath -split ";" | Where-Object { $_ })
+    if ($entries.TrimEnd("\") -notcontains $normalized) {
+        $updated = (@($entries) + $normalized) -join ";"
+        [Environment]::SetEnvironmentVariable("Path", $updated, "User")
+        Write-Info "added to user PATH: $normalized"
+    }
+    Refresh-ProcessPath
+}
+
 function Install-WingetPackage([string]$Id, [string]$Name) {
     & winget list --id $Id --exact --accept-source-agreements --disable-interactivity *> $null
     if ($LASTEXITCODE -eq 0) {
@@ -40,6 +52,96 @@ function Install-WingetPackage([string]$Id, [string]$Name) {
     if ($LASTEXITCODE -ne 0) {
         Write-Warn "winget could not install $Name ($Id); continuing so the rest of the setup is usable"
     }
+}
+
+function Install-PowerShellModule([string]$Name) {
+    if (Get-Module -ListAvailable -Name $Name) {
+        Write-Info "$Name present"
+        return
+    }
+
+    Write-Info "installing $Name"
+    try {
+        Install-PSResource -Name $Name -Scope CurrentUser -Repository PSGallery `
+            -TrustRepository -AcceptLicense -Quiet
+    } catch {
+        Write-Warn "$Name could not be installed: $($_.Exception.Message)"
+    }
+}
+
+function Assert-WorkingEnvironment([switch]$SkipPluginChecks) {
+    $missing = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($command in @(
+        "pwsh", "wt", "git", "nvim", "starship", "node", "npm", "python",
+        "go", "clangd", "rg", "bat", "fzf", "zoxide", "eza", "jq", "delta",
+        "ctags", "claude", "copilot", "herdr"
+    )) {
+        if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
+            $missing.Add("command:$command")
+        }
+    }
+
+    foreach ($module in @("posh-git", "PSFzf")) {
+        if (-not (Get-Module -ListAvailable -Name $module)) {
+            $missing.Add("PowerShell module:$module")
+        }
+    }
+
+    if (-not $SkipPluginChecks) {
+        foreach ($command in @("black", "gopls")) {
+            if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
+                $missing.Add("command:$command")
+            }
+        }
+
+        if (Get-Command python -ErrorAction SilentlyContinue) {
+            & python -c "import pynvim" *> $null
+            if ($LASTEXITCODE -ne 0) {
+                $missing.Add("Python module:pynvim")
+            }
+        }
+
+        foreach ($plugin in @("coc.nvim", "lualine.nvim", "gruvbox.nvim")) {
+            if (-not (Test-Path -LiteralPath (Join-Path $HOME ".vim\plugged\$plugin"))) {
+                $missing.Add("Neovim plugin:$plugin")
+            }
+        }
+
+        $vimLocal = Join-Path $HOME ".vimrc.local"
+        if ((Test-Path -LiteralPath $vimLocal) -and
+            (Select-String -LiteralPath $vimLocal `
+                -Pattern "^\s*let\s+g:copilot_enabled\s*=\s*1\s*$" -Quiet)) {
+            foreach ($plugin in @("copilot.vim", "plenary.nvim", "CopilotChat.nvim")) {
+                if (-not (Test-Path -LiteralPath (Join-Path $HOME ".vim\plugged\$plugin"))) {
+                    $missing.Add("Neovim plugin:$plugin")
+                }
+            }
+        }
+
+        $cocExtensionRoot = if ($env:COC_DATA_HOME) {
+            Join-Path $env:COC_DATA_HOME "extensions\node_modules"
+        } else {
+            Join-Path $env:LOCALAPPDATA "coc\extensions\node_modules"
+        }
+        foreach ($extension in @("coc-clangd", "coc-pyright", "coc-go")) {
+            if (-not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $extension))) {
+                $missing.Add("coc extension:$extension")
+            }
+        }
+
+        $markdownPreview = Join-Path $HOME `
+            ".vim\plugged\markdown-preview.nvim\app\bin\markdown-preview-win.exe"
+        if (-not (Test-Path -LiteralPath $markdownPreview -PathType Leaf)) {
+            $missing.Add("markdown-preview.nvim Windows binary")
+        }
+    }
+
+    if ($missing.Count -gt 0) {
+        throw "Windows setup is incomplete. Missing: $($missing -join ', '). Re-run install.ps1 after resolving the preceding installation errors."
+    }
+
+    Write-Info "validated Windows development environment"
 }
 
 function Backup-Path([string]$Path) {
@@ -90,6 +192,40 @@ function Install-ManagedFile([string]$Source, [string]$Destination) {
             Write-Warn "Links are unavailable; copied $Destination instead. Re-run after repo updates."
         }
     }
+}
+
+function Install-GitConfig([string]$Source, [string]$Destination) {
+    $parent = Split-Path -Parent $Destination
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+
+    $existing = Get-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
+    if ($null -ne $existing) {
+        $isReparsePoint = ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
+        if ($isReparsePoint) {
+            Remove-Item -LiteralPath $Destination -Force
+            $existing = $null
+        } elseif (-not $existing.PSIsContainer) {
+            $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash
+            $destinationHash = (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash
+            if ($sourceHash -eq $destinationHash) {
+                Backup-Path $Destination
+                $existing = $null
+            }
+        }
+    }
+
+    if ($null -eq $existing) {
+        Write-Utf8NoBom $Destination ""
+    }
+
+    $includes = @(& git config --file $Destination --get-all include.path)
+    if ($includes -notcontains $Source) {
+        & git config --file $Destination --add include.path $Source
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not include managed Git config from $Destination"
+        }
+    }
+    Write-Info "configured mutable Git config: $Destination"
 }
 
 function Test-DirectoryContentEqual([string]$Source, [string]$Destination) {
@@ -308,6 +444,9 @@ if (-not $SkipPackages) {
 
     Refresh-ProcessPath
 
+    Install-PowerShellModule -Name "posh-git"
+    Install-PowerShellModule -Name "PSFzf"
+
     if (-not (Get-Command herdr -ErrorAction SilentlyContinue)) {
         Write-Info "installing Herdr"
         $herdrInstaller = Join-Path ([IO.Path]::GetTempPath()) "herdr-install.ps1"
@@ -326,6 +465,11 @@ if (-not $SkipPackages) {
     }
 }
 
+$llvmBin = Join-Path $env:ProgramFiles "LLVM\bin"
+if (Test-Path -LiteralPath $llvmBin -PathType Container) {
+    Add-UserPath -Path $llvmBin
+}
+
 Write-Info "linking Windows configuration"
 $nvimConfig = Join-Path $env:LOCALAPPDATA "nvim"
 Install-ManagedFile (Join-Path $RepoRoot "nvim\vimrc") (Join-Path $HOME ".vimrc")
@@ -333,12 +477,31 @@ Install-ManagedFile (Join-Path $RepoRoot "nvim\init.vim") (Join-Path $nvimConfig
 Install-ManagedFile (Join-Path $RepoRoot "nvim\coc-settings.windows.json") (Join-Path $nvimConfig "coc-settings.json")
 Install-ManagedDirectory (Join-Path $RepoRoot "nvim\after") (Join-Path $HOME ".vim\after")
 Install-ManagedFile (Join-Path $RepoRoot "starship\starship.toml") (Join-Path $HOME ".config\starship.toml")
-Install-ManagedFile (Join-Path $RepoRoot "git\gitconfig.windows") (Join-Path $HOME ".gitconfig")
+Install-GitConfig (Join-Path $RepoRoot "git\gitconfig.windows") (Join-Path $HOME ".gitconfig")
 Install-ManagedFile (Join-Path $RepoRoot "git\gitignore_global") (Join-Path $HOME ".gitignore")
 Install-ManagedFile (Join-Path $RepoRoot "herdr\config.windows.toml") (Join-Path $env:APPDATA "herdr\config.toml")
-Install-ManagedFile (Join-Path $RepoRoot "powershell\Microsoft.PowerShell_profile.ps1") `
-    (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "PowerShell\Microsoft.PowerShell_profile.ps1")
+$powerShellProfile = Join-Path ([Environment]::GetFolderPath("MyDocuments")) `
+    "PowerShell\Microsoft.PowerShell_profile.ps1"
+Install-ManagedFile (Join-Path $RepoRoot "powershell\Microsoft.PowerShell_profile.ps1") $powerShellProfile
 Install-ManagedFile (Join-Path $RepoRoot "claude\statusline.ps1") (Join-Path $HOME ".claude\statusline.ps1")
+
+$powerShellInitCache = Join-Path $env:LOCALAPPDATA "dotfiles\powershell"
+foreach ($pattern in @("starship-*.ps1", "zoxide-*.ps1")) {
+    Get-ChildItem -LiteralPath $powerShellInitCache -Filter $pattern -File -ErrorAction SilentlyContinue |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+}
+
+Write-Info "warming PowerShell 7 startup cache"
+$env:DOTFILES_PROFILE_TO_WARM = $powerShellProfile
+try {
+    & (Join-Path $PSHOME "pwsh.exe") -NoLogo -NoProfile -NonInteractive `
+        -Command '. $env:DOTFILES_PROFILE_TO_WARM'
+    if ($LASTEXITCODE -ne 0) {
+        throw "PowerShell profile cache warm-up failed with exit code $LASTEXITCODE"
+    }
+} finally {
+    Remove-Item Env:DOTFILES_PROFILE_TO_WARM -ErrorAction SilentlyContinue
+}
 
 Set-ClaudeSettings
 
@@ -351,12 +514,30 @@ if (-not (Test-Path -LiteralPath $gitIdentity)) {
 
 $vimLocal = Join-Path $HOME ".vimrc.local"
 if (-not (Test-Path -LiteralPath $vimLocal)) {
-    $vimLocalContent = @"
+    Write-Utf8NoBom $vimLocal @"
 let g:vimwiki_path = '$($HOME.Replace('\', '/'))/vimwiki/src'
-let g:copilot_enabled = 0
 "@
-    Write-Utf8NoBom $vimLocal $vimLocalContent
     Write-Info "created $vimLocal"
+}
+
+[string]$vimLocalContent = Get-Content -LiteralPath $vimLocal -Raw
+if ([string]::IsNullOrEmpty($vimLocalContent) -or
+    $vimLocalContent -notmatch "(?m)^\s*let\s+g:copilot_enabled\s*=") {
+    $copilotEnabled = 0
+    if (-not [Console]::IsInputRedirected) {
+        $reply = Read-Host ">> enable Copilot AI completion and chat in nvim? [y/N]"
+        if ($reply -match "^[yY]") {
+            $copilotEnabled = 1
+        }
+    }
+
+    $vimLocalContent = $vimLocalContent.TrimEnd() +
+        "`r`nlet g:copilot_enabled = $copilotEnabled`r`n"
+    Write-Utf8NoBom $vimLocal $vimLocalContent
+    if ($copilotEnabled) {
+        Write-Info "enabled Copilot in $vimLocal"
+        Write-Info "run :Copilot setup once inside nvim to authenticate"
+    }
 }
 
 if (-not $SkipPlugins) {
@@ -375,9 +556,25 @@ if (-not $SkipPlugins) {
     }
 
     if (Get-Command python -ErrorAction SilentlyContinue) {
-        & python -m pip install --user --upgrade pynvim black
+        & python -m pip install --upgrade pynvim black
         if ($LASTEXITCODE -ne 0) {
             Write-Warn "Python provider packages failed to install"
+        } else {
+            $pythonScriptPaths = @(& python -c @"
+import sysconfig
+print(sysconfig.get_path('scripts'))
+print(sysconfig.get_path('scripts', scheme='nt_user'))
+"@)
+            if ($LASTEXITCODE -eq 0 -and
+                $pythonScriptPaths.Count -gt 0) {
+                $pythonScriptPaths |
+                    Where-Object {
+                        -not [string]::IsNullOrWhiteSpace($_) -and
+                        (Test-Path -LiteralPath $_ -PathType Container)
+                    } |
+                    Sort-Object -Unique |
+                    ForEach-Object { Add-UserPath -Path $_.Trim() }
+            }
         }
     } else {
         Write-Warn "python is not on PATH; skipping pynvim and black"
@@ -387,6 +584,8 @@ if (-not $SkipPlugins) {
         & go install golang.org/x/tools/gopls@latest
         if ($LASTEXITCODE -ne 0) {
             Write-Warn "gopls failed to install"
+        } else {
+            Add-UserPath -Path (Join-Path $HOME "go\bin")
         }
     } else {
         Write-Warn "go is not on PATH; skipping gopls"
@@ -396,6 +595,25 @@ if (-not $SkipPlugins) {
         & nvim --headless "+PlugUpdate --sync" "+qall"
         if ($LASTEXITCODE -ne 0) {
             Write-Warn "Neovim plugin installation had errors; run nvim +PlugUpdate manually"
+        }
+
+        $cocExtensionRoot = if ($env:COC_DATA_HOME) {
+            Join-Path $env:COC_DATA_HOME "extensions\node_modules"
+        } else {
+            Join-Path $env:LOCALAPPDATA "coc\extensions\node_modules"
+        }
+        $missingCocExtensions = @(
+            "coc-clangd", "coc-pyright", "coc-go" |
+                Where-Object {
+                    -not (Test-Path -LiteralPath (Join-Path $cocExtensionRoot $_))
+                }
+        )
+        if ($missingCocExtensions.Count -gt 0) {
+            $cocInstallCommand = "CocInstall -sync $($missingCocExtensions -join ' ')"
+            & nvim --headless "+$cocInstallCommand" "+qall"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "coc extension installation had errors; run :$cocInstallCommand"
+            }
         }
         $markdownPreviewRoot = Join-Path $HOME ".vim\plugged\markdown-preview.nvim"
         $markdownPreview = Join-Path $markdownPreviewRoot `
@@ -420,7 +638,10 @@ if (Get-Command herdr -ErrorAction SilentlyContinue) {
     Write-Warn "herdr is not on PATH; its Claude integration was not installed"
 }
 
+Assert-WorkingEnvironment -SkipPluginChecks:$SkipPlugins
+
 Write-Host
 Write-Info "Windows setup complete"
 Write-Host "Restart Windows Terminal, select PowerShell 7, and set its font face to JetBrainsMono Nerd Font Mono."
+Write-Host "Configure Git identity and authenticate Claude/Copilot when first used."
 Write-Host "Then run: herdr"

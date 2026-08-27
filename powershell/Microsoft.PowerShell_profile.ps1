@@ -20,19 +20,92 @@ if ((Test-Path -LiteralPath $llvmPath) -and $env:Path -notlike "*$llvmPath*") {
     $env:Path += ";$llvmPath"
 }
 
-if (Get-Module -ListAvailable -Name PSReadLine) {
-    Import-Module PSReadLine
+if (Import-Module PSReadLine -PassThru -ErrorAction SilentlyContinue) {
     Set-PSReadLineOption -EditMode Emacs -HistoryNoDuplicates
+    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+    Set-PSReadLineKeyHandler -Key Shift+Tab -Function TabCompletePrevious
+    Set-PSReadLineKeyHandler -Key Ctrl+r `
+        -BriefDescription "FzfHistory" `
+        -Description "Search persistent PowerShell history with fzf" `
+        -ScriptBlock {
+            $module = Get-Module -Name PSFzf
+            if (-not $module) {
+                $available = Get-Module -ListAvailable -Name PSFzf |
+                    Sort-Object Version -Descending |
+                    Select-Object -First 1
+                if (-not $available) {
+                    throw "PSFzf is not installed. Re-run install.ps1 without -SkipPackages."
+                }
+
+                Import-Module $available.Path -ArgumentList "", "", "", "" -ErrorAction Stop
+                $module = Get-Module -Name PSFzf
+            }
+
+            & $module { Invoke-FzfPsReadlineHandlerHistory }
+        }
     Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 }
 
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&starship init powershell)
+$nativeInitCache = Join-Path $env:LOCALAPPDATA "dotfiles\powershell"
+$importNativeInit = {
+    param(
+        [System.Management.Automation.ApplicationInfo]$Command,
+        [string]$Name,
+        [string[]]$Arguments
+    )
+
+    $executable = Get-Item -LiteralPath $Command.Source
+    if ($executable.LinkType -and $executable.Target) {
+        $target = $executable.Target
+        if (-not [IO.Path]::IsPathRooted($target)) {
+            $target = Join-Path $executable.DirectoryName $target
+        }
+        $executable = Get-Item -LiteralPath $target
+    }
+
+    $cacheKey = "$($executable.Length)-$($executable.LastWriteTimeUtc.Ticks)"
+    $cacheFile = Join-Path $nativeInitCache "$Name-$cacheKey.ps1"
+    if (-not (Test-Path -LiteralPath $cacheFile)) {
+        New-Item -ItemType Directory -Force -Path $nativeInitCache | Out-Null
+        $generated = & $Command.Source @Arguments | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            throw "$Name initialization failed with exit code $LASTEXITCODE"
+        }
+
+        $tempFile = "$cacheFile.$PID.tmp"
+        [IO.File]::WriteAllText($tempFile, $generated, [Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $tempFile -Destination $cacheFile -Force
+    }
+
+    . $cacheFile
 }
 
-if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+$starship = Get-Command starship -CommandType Application -ErrorAction SilentlyContinue
+if ($starship) {
+    & $importNativeInit $starship "starship" @("init", "powershell", "--print-full-init")
+}
+
+$zoxide = Get-Command zoxide -CommandType Application -ErrorAction SilentlyContinue
+if ($zoxide) {
+    & $importNativeInit $zoxide "zoxide" @("init", "powershell")
+}
+
+Remove-Variable nativeInitCache, importNativeInit, starship, zoxide -ErrorAction SilentlyContinue
+
+Register-ArgumentCompleter -Native -CommandName git, git.exe -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    if (-not (Get-Module -Name posh-git)) {
+        if (-not (Get-Module -ListAvailable -Name posh-git)) {
+            return
+        }
+        Import-Module posh-git -ErrorAction Stop
+    }
+
+    $length = $cursorPosition - $commandAst.Extent.StartOffset
+    $command = $commandAst.ToString().PadRight($length, " ").Substring(0, $length)
+    Expand-GitCommand $command
 }
 
 $env:FZF_DEFAULT_OPTS = "--bind=ctrl-d:preview-page-down,ctrl-u:preview-page-up"
