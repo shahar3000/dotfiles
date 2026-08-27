@@ -199,6 +199,7 @@ if has('nvim')
 	    },
 	    sections = {
 	      lualine_b = { 'branch', 'diff', { 'diagnostics', sources = { 'coc' } } },
+	      lualine_c = { { 'filename', path = 1 } }, -- relative to nvim's working directory
 	      lualine_x = {
 	        -- F12 toggles these (see below). Hidden, not shown empty, while
 	        -- off. Colored like 'branch', not red/yellow — those are coc's
