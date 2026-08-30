@@ -2,10 +2,10 @@
 # Provision a dev environment from a (near-)clean Linux/macOS box, then symlink
 # configs. IDEMPOTENT: every step checks first, so re-running is safe and cheap.
 #
-# This script NEVER runs sudo itself. When something needs root (installing OS
-# prereqs, creating the bottle-enabled brew prefix, setting the login shell) it
-# prints the exact command in a loud banner and waits for you to run it in
-# another terminal and press Enter. Everything else is user-local.
+# When something needs root (installing OS prereqs, creating the
+# bottle-enabled brew prefix, setting the login shell) it prints the exact
+# command in a banner and runs it itself via sudo (which may prompt for your
+# password). Everything else is user-local.
 #
 # What it does:
 #   1. ensure brew prerequisites (curl/git/unzip/compiler) — admin step if missing
@@ -53,28 +53,20 @@ curl_major_version() {
 # `git` auto-update of homebrew-core before every install — kept purely for speed.
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-# This script NEVER runs sudo itself. When a privileged command is required,
-# priv_step shows it in a loud banner and waits for you to run it in another
-# terminal, then press Enter. (If already root, it just runs it. If stdin isn't
-# a TTY — e.g. piped — it prints the command, warns, and continues so it can't hang.)
+# When a privileged command is required, priv_step shows it in a banner and
+# then runs it itself (via sudo, unless already root). sudo may still prompt
+# for your password — that's sudo, not us.
 #   priv_step "why this is needed" "the exact command to run as root"
 priv_step() {
 	local why="$1" cmd="$2"
 	if [ "${IS_ROOT:-0}" = "1" ]; then
 		info "running (already root): $cmd"
-		eval "$cmd"
-		return $?
-	fi
-	# bright yellow-on-red banner so it can't be missed
-	printf '\n\033[1;37;41m  ADMIN STEP NEEDED  \033[0m \033[1m%s\033[0m\n' "$why"
-	printf '\033[1;33m  Run this in another terminal (with sudo), then come back:\033[0m\n'
-	printf '\n    \033[1;36m%s\033[0m\n\n' "$cmd"
-	if [ -t 0 ]; then
-		printf '  \033[1mPress Enter once it has completed (or Ctrl-C to abort)...\033[0m '
-		read -r _ || true
 	else
-		warn "non-interactive: cannot wait — run the command above, then re-run this script."
+		printf '\n\033[1;34m>>\033[0m \033[1m%s\033[0m\n' "$why"
+		printf '    \033[1;36m%s\033[0m\n' "$cmd"
 	fi
+	eval "$cmd"
+	return $?
 }
 
 # ---------------------------------------------------------------------------
@@ -93,8 +85,8 @@ detect_env() {
 	# WSL = Linux kernel rendered by a Windows terminal; fonts live on Windows, not here.
 	IS_WSL=0
 	grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null && IS_WSL=1
-	# IS_ROOT=1 only when actually running as root. This script never invokes sudo;
-	# privileged commands are surfaced via priv_step for the user to run.
+	# IS_ROOT=1 only when actually running as root. Privileged commands are run
+	# via priv_step, which prefixes them with sudo unless already root.
 	IS_ROOT=0; [ "$(id -u)" -eq 0 ] && IS_ROOT=1
 	# Prefix for privileged commands: empty as root (sudo may not even exist in a
 	# minimal root container), "sudo " otherwise. Baked into the command strings so

@@ -80,8 +80,9 @@ git clone https://github.com/shahar3000/dotfiles.git ~/dotfiles && ~/dotfiles/in
 After it finishes, run `exec zsh` (or reconnect) to land in the configured shell.
 
 ### What install.sh does
-One command, **idempotent** (safe to re-run). It never runs `sudo` itself — when
-root is needed it prints the exact command in a banner and waits for you to run it.
+One command, **idempotent** (safe to re-run). When root is needed it prints
+the exact command in a banner and runs it itself via `sudo` (which may prompt
+for your password).
 1. symlinks configs first (so you get your dotfiles even if a later step fails)
 2. ensures brew prerequisites (curl/git/unzip/compiler) — admin step if missing
 3. installs **Homebrew** (canonical `/home/linuxbrew` when possible, else `~/.homebrew`)
