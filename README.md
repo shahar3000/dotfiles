@@ -74,7 +74,7 @@ repository's `Ctrl+B` pane, tab, navigation, zoom, and Gruvbox configuration.
 ### Linux, macOS, and WSL
 
 ```bash
-git clone https://github.com/shahar3000/dotfiles.git ~/dotfiles && ~/dotfiles/install.sh
+git clone https://github.com/shahar3000/dotfiles.git && cd dotfiles && ./install.sh
 ```
 
 After it finishes, run `exec zsh` (or reconnect) to land in the configured shell.
