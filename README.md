@@ -6,7 +6,45 @@ Supports native Windows as well as Linux, macOS, and WSL. Built on
 gives full C++/Python/Go IDE support with minimal setup). Unix shells use
 **zsh** via **zim**; Windows uses **PowerShell 7**; both use **starship**.
 
-## Native Windows
+## Install
+
+### Linux, macOS, and WSL
+
+```bash
+git clone https://github.com/shahar3000/dotfiles.git && cd dotfiles && ./install.sh
+```
+
+After it finishes, run `exec zsh` (or reconnect) to land in the configured shell.
+
+One command, **idempotent** (safe to re-run). When root is needed it prints
+the exact command in a banner and runs it itself via `sudo` (which may prompt
+for your password). `SKIP_PACKAGES=1 ./install.sh` skips all installs and only
+symlinks + local config.
+
+What `install.sh` does:
+
+1. symlinks configs first (so you get your dotfiles even if a later step fails)
+2. ensures brew prerequisites (curl/git/unzip/compiler) — admin step if missing
+3. installs **Homebrew** (canonical `/home/linuxbrew` when possible, else `~/.homebrew`)
+4. `brew install`s tools: zsh, neovim, vim, **node** (coc/LSP), **python**,
+   git-delta, bat, fzf, ripgrep, jq, universal-ctags, eza, zoxide, starship, tmux,
+   herdr, gopls. Then pip-installs **pynvim** (vimspector) and **black** (Python
+   formatting for coc-pyright) into that python. llvm (C++ toolchain, several GB)
+   installs on its own step afterward, best-effort — if it fails (e.g. small disk)
+   it's non-fatal, since coc-clangd fetches its own clangd.
+5. installs the JetBrainsMono Nerd Font (brew cask on macOS, `~/.local/share/fonts`
+   on native Linux desktops; WSL needs the font on the Windows side instead — see
+   [Nerd Font on WSL / Windows Terminal](#nerd-font-on-wsl--windows-terminal))
+6. WSL only: installs `win32yank` (nvim's clipboard bridge to Windows)
+7. wires herdr's Claude Code integration
+8. installs **zim** (zsh loader) + vim-plug + nvim/vim plugins
+9. makes **zsh** the login shell (`sudo usermod`, else a guarded `~/.bashrc` hand-off)
+10. prompts (TTY only) for git identity, vimwiki path, Copilot opt-in, and tmux
+    clipboard target
+
+On first `nvim` launch, coc auto-installs `coc-clangd`/`coc-pyright`/`coc-go`.
+
+### Native Windows
 
 The Windows setup runs directly on Windows without WSL, MSYS2, or Cygwin.
 It requires an internet connection and **App Installer / winget** (included
@@ -21,8 +59,8 @@ $env:Path = @(
   [Environment]::GetEnvironmentVariable("Path", "Machine"),
   [Environment]::GetEnvironmentVariable("Path", "User")
 ) -join ";"
-git clone https://github.com/shahar3000/dotfiles.git "$HOME\dotfiles"
-Set-Location "$HOME\dotfiles"
+git clone https://github.com/shahar3000/dotfiles.git
+Set-Location dotfiles
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
@@ -35,15 +73,17 @@ account being configured.
 The installer is idempotent and:
 
 1. installs Windows Terminal, PowerShell 7, Git, Neovim, Starship, Herdr,
-   posh-git completion, PSFzf history search, Claude Code, Copilot CLI,
+   posh-git completion, PSFzf fuzzy Tab completion and history search, Claude Code, Copilot CLI,
    language runtimes, compilers, CLI tools, and JetBrainsMono Nerd Font through
    winget, PowerShell Gallery, or the official Herdr installer;
 2. links the Windows configuration, backing up conflicting files first;
 3. prewarms PowerShell 7's Starship and zoxide startup cache;
-4. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
-5. configures Claude Code's status line without replacing other Claude settings;
-6. installs Herdr's Claude integration;
-7. validates required commands, PowerShell modules, editor plugins, coc language
+4. configures Claude Code's status line without replacing other Claude settings;
+5. prompts (unless stdin is redirected) for git identity, vimwiki path, and
+   Copilot opt-in — the same untracked local files as `install.sh`;
+6. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
+7. installs Herdr's Claude integration;
+8. validates required commands, PowerShell modules, editor plugins, coc language
    extensions, and the markdown-preview binary before reporting success.
 
 The Windows PowerShell bootstrap installs PowerShell 7 and relaunches the setup
@@ -57,10 +97,9 @@ or add `-SkipPlugins` to avoid network-dependent plugin updates.
 
 After installation, restart Windows Terminal, select its **PowerShell 7**
 profile, and set **JetBrainsMono Nerd Font Mono** under profile Appearance.
-Git identity and service authentication remain intentionally personal: configure
-`~/.gitconfig.local`, then sign in to Claude Code, Copilot CLI, and
-`:Copilot setup` in nvim if you enable the optional editor integration.
-Launch the complete pane/agent environment with:
+Sign in to Claude Code and Copilot CLI, and run `:Copilot setup` in nvim if
+you enabled the optional editor integration. Launch the complete pane/agent
+environment with:
 
 ```powershell
 herdr
@@ -68,38 +107,6 @@ herdr
 
 Herdr replaces tmux natively through Windows ConPTY while retaining this
 repository's `Ctrl+B` pane, tab, navigation, zoom, and Gruvbox configuration.
-
-## Install
-
-### Linux, macOS, and WSL
-
-```bash
-git clone https://github.com/shahar3000/dotfiles.git && cd dotfiles && ./install.sh
-```
-
-After it finishes, run `exec zsh` (or reconnect) to land in the configured shell.
-
-### What install.sh does
-One command, **idempotent** (safe to re-run). When root is needed it prints
-the exact command in a banner and runs it itself via `sudo` (which may prompt
-for your password).
-1. symlinks configs first (so you get your dotfiles even if a later step fails)
-2. ensures brew prerequisites (curl/git/unzip/compiler) — admin step if missing
-3. installs **Homebrew** (canonical `/home/linuxbrew` when possible, else `~/.homebrew`)
-4. `brew install`s tools: zsh, neovim, vim, **node** (coc/LSP), **python**,
-   git-delta, bat, fzf, ripgrep, jq, universal-ctags, eza, zoxide, starship, tmux,
-   herdr, gopls (llvm separate/best-effort). Then pip-installs **pynvim**
-   (vimspector) and **black** (Python formatting for coc-pyright) into that python.
-5. installs **zim** (zsh loader) + vim-plug + nvim plugins
-6. makes **zsh** the login shell (`sudo usermod`, else a guarded `~/.bashrc` hand-off)
-7. prompts (TTY only) for git identity, vimwiki path, tmux clipboard target
-
-`SKIP_PACKAGES=1 ./install.sh` skips all installs and only symlinks + local config.
-
-llvm (C++ toolchain, several GB) installs on its own step after the core tools; if
-it fails (e.g. small disk) it's non-fatal — coc-clangd fetches its own clangd.
-
-On first `nvim` launch, coc auto-installs `coc-clangd`/`coc-pyright`/`coc-go`.
 
 ## Nerd Font (required for icons)
 
@@ -113,6 +120,8 @@ as tofu boxes (the configs still work, they just look wrong).
 - **macOS / native Linux desktop** — `install.sh` installs the font automatically
   (brew cask on macOS; `~/.local/share/fonts` + `fc-cache` on Linux). Then set
   your terminal's font to `JetBrainsMono Nerd Font Mono`.
+- **Native Windows** — `install.ps1` installs it via winget. Set it as described
+  above.
 
 ### Nerd Font on WSL / Windows Terminal
 
@@ -130,6 +139,8 @@ it, so do this once on Windows:
 
 Until then everything still works — you'll just see tofu boxes where icons/
 triangle separators should be.
+
+## Troubleshooting
 
 ### Clipboard on WSL
 
@@ -215,9 +226,12 @@ coc's; Copilot accepts on `<C-l>`.
 
 ## Notes
 
-- **git identity, vimwiki path, Copilot opt-in, tmux clipboard** are prompted by
-  `install.sh` and stored in untracked local files (`~/.gitconfig.local` — pulled
-  in via `[include]` from the tracked gitconfig — `~/.vimrc.local`,
-  `~/.tmux.local.conf`).
+- **git identity, vimwiki path, Copilot opt-in** are prompted by both
+  installers (unless stdin is redirected) and stored in untracked local files:
+  `~/.gitconfig.local` (pulled in via `[include]` from the tracked gitconfig)
+  and `~/.vimrc.local`.
+- **tmux clipboard target** is prompted by `install.sh` only (native Windows
+  uses Herdr instead of tmux) and stored in `~/.tmux.local.conf`.
 - **Machine-local zsh overrides** go in `~/.zshrc.local` (untracked, sourced last).
-- Re-run `./install.sh` any time — it only does what's missing.
+- Re-run `./install.sh` (or `install.ps1` on Windows) any time — each only does
+  what's missing.
