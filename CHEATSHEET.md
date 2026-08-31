@@ -154,10 +154,11 @@ Defaults mirror tmux; only `split_vertical` is remapped to `|` for parity.
 | autosuggestions | grey suggestion from history; `→` / `End` to accept |
 | fast-syntax-highlighting | valid commands green, errors red, as you type |
 | `↑` / `↓` | history-substring-search: cycle history matching typed prefix |
-| `Tab` | fzf-tab: fuzzy completion menu (eza tree preview on `cd` completions only) |
-| `Ctrl-t` | fzf file picker with bat/eza preview |
+| `Tab` | fzf-tab: fuzzy completion menu (eza tree preview on `cd` completions only). Only completes one path segment at a time, like normal shell completion |
+| `** <Tab>` | fzf's own trigger: fuzzy search **recursively** into subdirectories, inserted at the cursor |
+| `Ctrl-t` | fzf file picker (recursive from cwd) with bat/eza preview |
 | `Ctrl-r` | fzf history search |
-| `Alt-c` | fzf cd into subdirectory |
+| `Alt-c` | fzf cd into subdirectory (recursive from cwd) |
 | `Ctrl-u` (inside any fzf) | page preview up — note: this shadows fzf's normal "clear line" default |
 | `z foo` | zoxide: jump to most-used dir matching "foo" · `zi` = fuzzy pick |
 | `vim` | aliased to `nvim` |
@@ -172,7 +173,8 @@ Prompt: **starship** (async git branch/status, fast in large repos). Loader: **z
 
 | Key | Action |
 |-----|--------|
-| `Tab` | fzf-tab-equivalent: fuzzy completion menu (via PSFzf) |
+| `Tab` | fzf-tab-equivalent: fuzzy completion menu (via PSFzf). Only completes one path segment at a time, like normal shell completion |
+| `Ctrl-t` | fuzzy-find a file/path **recursively** from cwd, insert at cursor |
 | `Ctrl-r` | fuzzy-search persistent command history with fzf |
 | `↑` / `↓` | history search matching what's already typed |
 | `git … Tab` | Git commands, branches, remotes, tags, and paths (posh-git loads on first use) |

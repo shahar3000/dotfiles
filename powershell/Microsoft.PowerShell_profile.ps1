@@ -20,29 +20,34 @@ if ((Test-Path -LiteralPath $llvmPath) -and $env:Path -notlike "*$llvmPath*") {
     $env:Path += ";$llvmPath"
 }
 
+# Resolves and imports PSFzf on first use, returning the loaded module (or
+# $null if it isn't installed). PSFzf's own Import-Module is unusually slow
+# (~1-2s, a known upstream issue: github.com/kelleyma49/PSFzf#365, an internal
+# Get-Module -ListAvailable call), so every key handler below loads it lazily
+# on first press instead of importing it eagerly at shell startup, which
+# would pay that cost on every single shell launch.
+function Import-LazyPSFzf {
+    $module = Get-Module -Name PSFzf
+    if (-not $module) {
+        $available = Get-Module -ListAvailable -Name PSFzf |
+            Sort-Object Version -Descending |
+            Select-Object -First 1
+        if ($available) {
+            Import-Module $available.Path -ArgumentList "", "", "", "" -ErrorAction SilentlyContinue
+            $module = Get-Module -Name PSFzf
+        }
+    }
+    return $module
+}
+
 if (Import-Module PSReadLine -PassThru -ErrorAction SilentlyContinue) {
     Set-PSReadLineOption -EditMode Emacs -HistoryNoDuplicates
 
-    # PSFzf's fzf-based Tab completion (the equivalent of zsh's fzf-tab: an
-    # actual fuzzy-searchable picker instead of a plain cycling menu). Loaded
-    # LAZILY on first Tab press, same as the Ctrl+r handler below — PSFzf's own
-    # `Import-Module` is unusually slow (~1-2s, a known upstream issue:
-    # github.com/kelleyma49/PSFzf#365, an internal `Get-Module -ListAvailable`
-    # call), so importing it eagerly here would pay that cost on every single
-    # shell startup instead of only when Tab is actually used.
+    # Fzf-based Tab completion: the equivalent of zsh's fzf-tab, an actual
+    # fuzzy-searchable picker instead of a plain cycling menu.
     Set-PSReadLineKeyHandler -Key Tab -ScriptBlock {
         param($key, $arg)
-        $module = Get-Module -Name PSFzf
-        if (-not $module) {
-            $available = Get-Module -ListAvailable -Name PSFzf |
-                Sort-Object Version -Descending |
-                Select-Object -First 1
-            if ($available) {
-                Import-Module $available.Path -ArgumentList "", "", "", "" -ErrorAction SilentlyContinue
-                $module = Get-Module -Name PSFzf
-            }
-        }
-
+        $module = Import-LazyPSFzf
         if ($module) {
             & $module { Invoke-FzfTabCompletion }
         } else {
@@ -55,21 +60,28 @@ if (Import-Module PSReadLine -PassThru -ErrorAction SilentlyContinue) {
         -BriefDescription "FzfHistory" `
         -Description "Search persistent PowerShell history with fzf" `
         -ScriptBlock {
-            $module = Get-Module -Name PSFzf
+            $module = Import-LazyPSFzf
             if (-not $module) {
-                $available = Get-Module -ListAvailable -Name PSFzf |
-                    Sort-Object Version -Descending |
-                    Select-Object -First 1
-                if (-not $available) {
-                    throw "PSFzf is not installed. Re-run install.ps1 without -SkipPackages."
-                }
-
-                Import-Module $available.Path -ArgumentList "", "", "", "" -ErrorAction Stop
-                $module = Get-Module -Name PSFzf
+                throw "PSFzf is not installed. Re-run install.ps1 without -SkipPackages."
             }
-
             & $module { Invoke-FzfPsReadlineHandlerHistory }
         }
+
+    # Fuzzy-find a file/path anywhere under the cwd (recursively) and insert
+    # it at the cursor -- the equivalent of zsh's Ctrl-t. Plain Tab, on both
+    # zsh's fzf-tab and PSFzf, only completes one path segment at a time by
+    # design; this is the actual tool for "search subdirectories too".
+    Set-PSReadLineKeyHandler -Key Ctrl+t `
+        -BriefDescription "FzfProvider" `
+        -Description "Fuzzy-find a file/path with fzf and insert it at the cursor" `
+        -ScriptBlock {
+            $module = Import-LazyPSFzf
+            if (-not $module) {
+                throw "PSFzf is not installed. Re-run install.ps1 without -SkipPackages."
+            }
+            & $module { Invoke-FzfPsReadlineHandlerProvider }
+        }
+
     Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 }
