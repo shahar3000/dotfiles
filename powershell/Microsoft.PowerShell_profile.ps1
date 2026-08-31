@@ -22,8 +22,35 @@ if ((Test-Path -LiteralPath $llvmPath) -and $env:Path -notlike "*$llvmPath*") {
 
 if (Import-Module PSReadLine -PassThru -ErrorAction SilentlyContinue) {
     Set-PSReadLineOption -EditMode Emacs -HistoryNoDuplicates
-    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+
+    # PSFzf's fzf-based Tab completion (the equivalent of zsh's fzf-tab: an
+    # actual fuzzy-searchable picker instead of a plain cycling menu). Loaded
+    # LAZILY on first Tab press, same as the Ctrl+r handler below — PSFzf's own
+    # `Import-Module` is unusually slow (~1-2s, a known upstream issue:
+    # github.com/kelleyma49/PSFzf#365, an internal `Get-Module -ListAvailable`
+    # call), so importing it eagerly here would pay that cost on every single
+    # shell startup instead of only when Tab is actually used.
+    Set-PSReadLineKeyHandler -Key Tab -ScriptBlock {
+        param($key, $arg)
+        $module = Get-Module -Name PSFzf
+        if (-not $module) {
+            $available = Get-Module -ListAvailable -Name PSFzf |
+                Sort-Object Version -Descending |
+                Select-Object -First 1
+            if ($available) {
+                Import-Module $available.Path -ArgumentList "", "", "", "" -ErrorAction SilentlyContinue
+                $module = Get-Module -Name PSFzf
+            }
+        }
+
+        if ($module) {
+            & $module { Invoke-FzfTabCompletion }
+        } else {
+            [Microsoft.PowerShell.PSConsoleReadLine]::MenuComplete($key, $arg)
+        }
+    }
     Set-PSReadLineKeyHandler -Key Shift+Tab -Function TabCompletePrevious
+
     Set-PSReadLineKeyHandler -Key Ctrl+r `
         -BriefDescription "FzfHistory" `
         -Description "Search persistent PowerShell history with fzf" `
