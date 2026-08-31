@@ -559,6 +559,23 @@ if (Test-Path -LiteralPath $llvmBin -PathType Container) {
     Add-UserPath -Path $llvmBin
 }
 
+# Git for Windows bundles a full MSYS2 POSIX toolset (grep, less, sed, awk,
+# find, ...) under usr\bin. Only cmd\ (git itself) and mingw64\bin (a handful
+# of mingw-native tools) are on PATH by default. Derive the Git root from
+# `git --exec-path` (.../mingw64/libexec/git-core) instead of hardcoding
+# Program Files, so this also works for a non-default Git install location.
+$gitCommand = Get-Command git -ErrorAction SilentlyContinue
+if ($gitCommand) {
+    $gitExecPath = (& git --exec-path 2>$null)
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($gitExecPath)) {
+        $gitRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $gitExecPath.Trim()))
+        $gitUsrBin = Join-Path $gitRoot "usr\bin"
+        if (Test-Path -LiteralPath $gitUsrBin -PathType Container) {
+            Add-UserPath -Path $gitUsrBin
+        }
+    }
+}
+
 Write-Info "linking Windows configuration"
 $nvimConfig = Join-Path $env:LOCALAPPDATA "nvim"
 Install-ManagedFile (Join-Path $RepoRoot "nvim\vimrc") (Join-Path $HOME ".vimrc")
