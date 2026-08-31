@@ -177,7 +177,7 @@ Prompt: **starship** (async git branch/status, fast in large repos). Loader: **z
 | `↑` / `↓` | history search matching what's already typed |
 | `git … Tab` | Git commands, branches, remotes, tags, and paths (posh-git loads on first use) |
 | `vim` | function aliased to `nvim` |
-| `ll` | eza (color/git/icons) if installed, else `Get-ChildItem -Force` |
+| `ls` / `ll` | eza (color/git/icons) if installed, else `Get-ChildItem` (`-Force` for `ll`) |
 | `reprofile` | reload `$PROFILE` |
 
 ---

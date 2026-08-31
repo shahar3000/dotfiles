@@ -140,6 +140,19 @@ $env:FZF_DEFAULT_OPTS = "--bind=ctrl-d:preview-page-down,ctrl-u:preview-page-up"
 function global:vim { nvim @args }
 function global:reprofile { . $PROFILE }
 
+# PowerShell's built-in `ls` is an ALIAS to Get-ChildItem, and aliases take
+# precedence over functions of the same name -- defining `function ls` alone
+# would be silently shadowed by that alias. Remove it first so the function
+# below actually runs.
+Remove-Item -Path Alias:ls -Force -ErrorAction SilentlyContinue
+function global:ls {
+    if (Get-Command eza -ErrorAction SilentlyContinue) {
+        eza --color=always --git --icons=always --group-directories-first @args
+    } else {
+        Get-ChildItem @args
+    }
+}
+
 function global:ll {
     if (Get-Command eza -ErrorAction SilentlyContinue) {
         eza --color=always --long --git --icons=always --group-directories-first @args
