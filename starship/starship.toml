@@ -6,6 +6,14 @@
 
 add_newline = true   # blank line before each prompt — easier to scan history
 
+# Starship's default (500ms) is tuned for Linux/macOS, where spawning git.exe
+# et al. costs low single-digit ms. On native Windows, process creation is far
+# heavier (antivirus real-time scanning each new .exe), so git_status/
+# git_branch can blow past 500ms and starship logs a "timed out" warning
+# instead of showing the module. Raised for both platforms since a higher
+# ceiling costs nothing where commands already return fast.
+command_timeout = 1000
+
 format = """
 $username$hostname$directory$git_branch$git_status\
 $nodejs$python$golang$rust$c$java$ruby$package\
