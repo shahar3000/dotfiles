@@ -618,9 +618,15 @@ if ([string]::IsNullOrWhiteSpace($existingGitEmail)) {
 
 $vimLocal = Join-Path $HOME ".vimrc.local"
 if (-not (Test-Path -LiteralPath $vimLocal)) {
-    Write-Utf8NoBom $vimLocal @"
-let g:vimwiki_path = '$($HOME.Replace('\', '/'))/vimwiki/src'
-"@
+    $defaultWikiPath = "$($HOME.Replace('\', '/'))/vimwiki/src"
+    $wikiPath = $defaultWikiPath
+    if (-not [Console]::IsInputRedirected) {
+        $reply = Read-Host ">> vimwiki path [$defaultWikiPath]"
+        if (-not [string]::IsNullOrWhiteSpace($reply)) {
+            $wikiPath = $reply
+        }
+    }
+    Write-Utf8NoBom $vimLocal "let g:vimwiki_path = '$wikiPath'`r`n"
     Write-Info "created $vimLocal"
 }
 
