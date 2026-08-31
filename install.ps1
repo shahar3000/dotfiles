@@ -595,10 +595,25 @@ try {
 Set-ClaudeSettings
 
 $gitIdentity = Join-Path $HOME ".gitconfig.local"
-if (-not (Test-Path -LiteralPath $gitIdentity)) {
-    Write-Warn "Git identity is not configured. Set it with:"
-    Write-Host '  git config --file "$HOME/.gitconfig.local" user.name "Your Name"'
-    Write-Host '  git config --file "$HOME/.gitconfig.local" user.email "you@example.com"'
+$existingGitEmail = & git config --global user.email
+if ([string]::IsNullOrWhiteSpace($existingGitEmail)) {
+    if ([Console]::IsInputRedirected) {
+        Write-Warn "Git identity is not configured. Set it with:"
+        Write-Host '  git config --file "$HOME/.gitconfig.local" user.name "Your Name"'
+        Write-Host '  git config --file "$HOME/.gitconfig.local" user.email "you@example.com"'
+    } else {
+        $gitName = Read-Host ">> git user.name (blank to skip)"
+        $gitEmail = Read-Host ">> git user.email (blank to skip)"
+        if (-not [string]::IsNullOrWhiteSpace($gitName)) {
+            & git config --file $gitIdentity user.name $gitName
+        }
+        if (-not [string]::IsNullOrWhiteSpace($gitEmail)) {
+            & git config --file $gitIdentity user.email $gitEmail
+        }
+        if (-not ([string]::IsNullOrWhiteSpace($gitName) -and [string]::IsNullOrWhiteSpace($gitEmail))) {
+            Write-Info "wrote git identity to $gitIdentity"
+        }
+    }
 }
 
 $vimLocal = Join-Path $HOME ".vimrc.local"
