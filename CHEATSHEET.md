@@ -100,6 +100,7 @@ identifiers across a file or log. (Distinct from `hlsearch`, which is one patter
 | `zM` / `zr` | fold all / unfold one level (vimwiki `expr` folding) |
 | `F7` / `:MarkdownPreview` | toggle live browser preview (markdown-preview.nvim) |
 | `,W` | `:VimWikiRg` — ripgrep the whole wiki for `:tag:`-style anchors, via fzf |
+| `<Tab>` (insert) | coc completion, same as elsewhere; jumps table cells inside a `\|a\|b\|` table (vimwiki) |
 
 **Why it's wired this way:** vimwiki assigns `.md` files the filetype `vimwiki`
 (verified). `g:vimwiki_filetypes=['markdown']` adds the `markdown` filetype too
