@@ -138,7 +138,7 @@ Register-ArgumentCompleter -Native -CommandName git, git.exe -ScriptBlock {
 $env:FZF_DEFAULT_OPTS = "--bind=ctrl-d:preview-page-down,ctrl-u:preview-page-up"
 
 function global:vim { nvim @args }
-function global:rezsh { . $PROFILE }
+function global:reprofile { . $PROFILE }
 
 function global:ll {
     if (Get-Command eza -ErrorAction SilentlyContinue) {
