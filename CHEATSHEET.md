@@ -20,7 +20,7 @@ Keybindings & commands **this config actually defines**. Leader is `,`.
 | `F5` | `:FGrep` (git grep) · `F6` = FGrep on word under cursor |
 | `F9` | `:Format` (format buffer via LSP) |
 | `,C` / `,BC` | `:Commits` / buffer commits |
-| Inside fzf | `Ctrl-y/e` preview up/down · `Ctrl-b/f` page · `Ctrl-p` toggle preview |
+| Inside fzf | `Ctrl-y/e` preview up/down · `Ctrl-b/f` preview page up/down · `Ctrl-u/d` preview half-page up/down · `Ctrl-p` toggle preview |
 
 ### LSP / code (coc — clangd, pyright, gopls)
 | Key | Action |
@@ -40,6 +40,7 @@ Keybindings & commands **this config actually defines**. Leader is `,`.
 | `<space>a` | diagnostics list · `<space>o` outline · `<space>s` workspace symbols |
 | `<space>e` | extensions · `<space>c` commands |
 | `<space>j` `<space>k` | next / prev item in a CocList · `<space>p` resume last list |
+| `Ctrl-Space` (insert, nvim) / `Ctrl-@` (insert, Vim) | manually re-trigger coc's completion popup |
 
 ### Debugging (vimspector)
 Put a `.vimspector.json` in the project root (templates in `vimspector/`).
@@ -49,7 +50,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `,db` | toggle breakpoint · `,dB` conditional · `,df` function bp |
 | `,dn` | step over |
 | `,di` | step into · `,do` step out |
-| `,dr` restart · `,ds` stop · `,dp` pause · `,dq` reset |
+| `,dr` | restart · `,ds` stop · `,dp` pause · `,dq` reset |
 
 (Debug maps are under `<leader>d*` — NOT bare `d*`, which would shadow vim's delete operator.)
 
@@ -77,7 +78,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `,F` | toggle clang-format-on-save |
 | open `file.c:42` | jumps to line 42 (vim-fetch) |
 | `F2` | toggle Copilot Chat in Normal or Insert mode (when enabled) |
-| `F12` | toggle `paste`+`spell` together (verbatim-paste code blocks, no autoindent mangling) — shown in the statusline while on. Persists across inserts until you press `F12` again; turning it back **off** only works from Normal mode |
+| `F12` | toggle `paste`+`spell` together (verbatim-paste code blocks, no autoindent mangling) — shown in the statusline while on. Persists across inserts until you press `F12` again; turning it back **off** only works from Normal mode. Markdown/vimwiki buffers start with `spell` already on, so the first `F12` press there turns it (and `paste`) **off** instead |
 | `Ctrl-l` (insert, Copilot suggestion showing) | accept Copilot's ghost-text suggestion — opt-in, see README |
 
 ### Marks — multi-color highlighting (vim-mark)
@@ -98,6 +99,7 @@ identifiers across a file or log. (Distinct from `hlsearch`, which is one patter
 | `<C-Space>` | vimwiki: toggle checkbox (native) |
 | `zM` / `zr` | fold all / unfold one level (vimwiki `expr` folding) |
 | `F7` / `:MarkdownPreview` | toggle live browser preview (markdown-preview.nvim) |
+| `,W` | `:VimWikiRg` — ripgrep the whole wiki for `:tag:`-style anchors, via fzf |
 
 **Why it's wired this way:** vimwiki assigns `.md` files the filetype `vimwiki`
 (verified). `g:vimwiki_filetypes=['markdown']` adds the `markdown` filetype too
@@ -115,6 +117,7 @@ vim-markdown-folding (it would conflict). bullets.vim is scoped to
 | `prefix \|` | split vertical (keep cwd) |
 | `prefix -` | split horizontal (keep cwd) |
 | `prefix c` | new window (keep cwd) |
+| `prefix P` | paste the tmux paste buffer |
 | `prefix h` | toggle synchronize-panes (type in all panes) |
 | `prefix r` | reload tmux.conf |
 | `prefix b` | toggle status bar |
@@ -151,13 +154,14 @@ Defaults mirror tmux; only `split_vertical` is remapped to `|` for parity.
 | autosuggestions | grey suggestion from history; `→` / `End` to accept |
 | fast-syntax-highlighting | valid commands green, errors red, as you type |
 | `↑` / `↓` | history-substring-search: cycle history matching typed prefix |
-| `Tab` | fzf-tab: fuzzy completion menu with bat/eza preview |
-| `Ctrl-t` | fzf file picker with preview |
+| `Tab` | fzf-tab: fuzzy completion menu (eza tree preview on `cd` completions only) |
+| `Ctrl-t` | fzf file picker with bat/eza preview |
 | `Ctrl-r` | fzf history search |
 | `Alt-c` | fzf cd into subdirectory |
+| `Ctrl-u` (inside any fzf) | page preview up — note: this shadows fzf's normal "clear line" default |
 | `z foo` | zoxide: jump to most-used dir matching "foo" · `zi` = fuzzy pick |
 | `vim` | aliased to `nvim` |
-| `ll` | long list (eza if installed, else `ls -alF`) |
+| `ls` / `ll` | eza (color/git/icons) if installed, else plain `ls` / `ls -alF` |
 | `bat file` | syntax-highlighted cat (`batcat` on Debian) |
 | `show_csv f.csv` | pretty-print a CSV in less |
 | `rezsh` | reload zshenv + zshrc |
@@ -168,10 +172,13 @@ Prompt: **starship** (async git branch/status, fast in large repos). Loader: **z
 
 | Key | Action |
 |-----|--------|
-| `Tab` | open completion menu for commands, files/directories, and arguments |
-| `Shift-Tab` | move backward through completion choices |
+| `Tab` | fzf-tab-equivalent: fuzzy completion menu (via PSFzf) |
 | `Ctrl-r` | fuzzy-search persistent command history with fzf |
+| `↑` / `↓` | history search matching what's already typed |
 | `git … Tab` | Git commands, branches, remotes, tags, and paths (posh-git loads on first use) |
+| `vim` | function aliased to `nvim` |
+| `ll` | eza (color/git/icons) if installed, else `Get-ChildItem -Force` |
+| `reprofile` | reload `$PROFILE` |
 
 ---
 
@@ -189,7 +196,9 @@ Prompt: **starship** (async git branch/status, fast in large repos). Loader: **z
 | `git r` | fetch origin + rebase onto the remote's default branch (main/master) |
 
 **delta** is the pager → all `git diff` / `git show` / `git log -p` output is
-syntax-highlighted. `n` / `N` jump between files in a diff.
+syntax-highlighted. `n` / `N` jump between files in a diff. It's also wired as
+the `interactive.diffFilter`, so `git add -p` / `git checkout -p` hunks are
+delta-highlighted too.
 
 ---
 

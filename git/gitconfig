@@ -29,7 +29,7 @@
 [interactive]
 	diffFilter = delta --color-only
 [delta]
-	navigate = true          # n / N to move between diff sections
+	navigate = true          # n / N to move between files in the diff
 	line-numbers = true
 [push]
 	default = simple

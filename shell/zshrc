@@ -89,7 +89,8 @@ elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
 	[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
 fi
 
-# fzf-tab preview for `cd`/files (uses eza/bat when available)
+# fzf-tab preview for `cd` completions (eza tree view; no preview for other
+# completion types)
 if command -v eza >/dev/null 2>&1; then
 	zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --tree --color=always $realpath | head -200'
 fi
