@@ -564,7 +564,11 @@ function! ToggleWriteMode()
 	endif
 endfunction
 nnoremap <silent> <F12> :call ToggleWriteMode()<CR>
-inoremap <silent> <F12> <C-o>:call ToggleWriteMode()<CR>  " only while 'paste' is off
+" Insert-mode F12 only actually turns paste OFF (see comment above): while
+" 'paste' is on it disables insert-mode mappings, so this one is unreachable
+" then anyway. NOTE: don't put a trailing comment on a :map line — Vim does
+" NOT strip it, so it becomes part of the {rhs} and gets typed into the buffer.
+inoremap <silent> <F12> <C-o>:call ToggleWriteMode()<CR>
 
 nmap gb :Git blame<CR>
 nmap gs :vertical G show<CR>
