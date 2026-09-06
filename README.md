@@ -58,10 +58,20 @@ On first `nvim` launch, coc auto-installs `coc-clangd`/`coc-pyright`/`coc-go`.
 
 The Windows setup runs directly on Windows without WSL, MSYS2, or Cygwin.
 It requires an internet connection and **App Installer / winget** (included
-with current Windows 10/11 installations). The bootstrap installs Git first
-because the repository cannot clone itself.
+with current Windows 10/11 installations).
 Open PowerShell **as Administrator** using the Windows account being configured,
 then run:
+
+```powershell
+irm https://raw.githubusercontent.com/shahar3000/dotfiles/main/bootstrap.ps1 | iex
+```
+
+Installs git if it's missing, clones the repo into `.\dotfiles`, then runs
+`install.ps1` (re-running the command later fast-forward updates an existing
+`.\dotfiles` checkout instead of re-cloning). Set `$env:DOTFILES_DIR` to
+clone somewhere else. Prefer to read the script before running it, already
+have the repo cloned, or need `-SkipPackages`/`-SkipPlugins`? Clone manually
+instead — the repository cannot clone itself, so this installs Git first:
 
 ```powershell
 winget install --id Git.Git --exact --source winget --accept-package-agreements --accept-source-agreements
