@@ -11,15 +11,25 @@ gives full C++/Python/Go IDE support with minimal setup). Unix shells use
 ### Linux, macOS, and WSL
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/shahar3000/dotfiles/main/bootstrap.sh | bash
+```
+
+Installs git if it's missing, clones the repo into `./dotfiles`, then runs
+`install.sh` (re-running the command later fast-forward updates an existing
+`./dotfiles` checkout instead of re-cloning). Set `DOTFILES_DIR` to clone
+somewhere else. Prefer to read the script before running it, or already have
+the repo cloned? Clone manually instead:
+
+```bash
 git clone https://github.com/shahar3000/dotfiles.git && cd dotfiles && ./install.sh
 ```
 
 After it finishes, run `exec zsh` (or reconnect) to land in the configured shell.
 
-One command, **idempotent** (safe to re-run). When root is needed it prints
-the exact command in a banner and runs it itself via `sudo` (which may prompt
-for your password). `SKIP_PACKAGES=1 ./install.sh` skips all installs and only
-symlinks + local config.
+Either way, `install.sh` is **idempotent** (safe to re-run). When root is
+needed it prints the exact command in a banner and runs it itself via `sudo`
+(which may prompt for your password). `SKIP_PACKAGES=1 ./install.sh` skips
+all installs and only symlinks + local config.
 
 What `install.sh` does:
 
