@@ -77,7 +77,7 @@ Put a `.vimspector.json` in the project root (templates in `vimspector/`).
 | `gc` | comment/uncomment (motion: `gcc` line, `gcap` paragraph) — vim-commentary |
 | `,F` | toggle clang-format-on-save |
 | open `file.c:42` | jumps to line 42 (vim-fetch) |
-| `F2` | toggle Copilot Chat in Normal or Insert mode (when enabled) |
+| `F2` | toggle Copilot Chat in Normal, Insert, or Visual mode (when enabled) — just opens/closes the window, doesn't send the selection as context |
 | `F12` | toggle `paste`+`spell` together (verbatim-paste code blocks, no autoindent mangling) — shown in the statusline while on. Persists across inserts until you press `F12` again; turning it back **off** only works from Normal mode. Markdown/vimwiki buffers start with `spell` already on, so the first `F12` press there turns it (and `paste`) **off** instead |
 | `Ctrl-l` (insert, Copilot suggestion showing) | accept Copilot's ghost-text suggestion — opt-in, see README |
 

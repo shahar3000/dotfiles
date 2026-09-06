@@ -151,6 +151,12 @@ EOF
   endif
   nnoremap <silent> <F2> :CopilotChatToggle<CR>
   inoremap <silent> <F2> <C-o>:CopilotChatToggle<CR>
+  " <C-u> strips the '<,'> range visual mode auto-prepends to a command-line
+  " command: CopilotChatToggle declares no range support, so without this it
+  " errors (E481: No range allowed) instead of toggling. The plugin's toggle()
+  " ignores selection either way, so this just closes/opens the chat window,
+  " same as Normal/Insert mode -- it does not send the selection as context.
+  vnoremap <silent> <F2> :<C-u>CopilotChatToggle<CR>
 endif
 
 " ============================================================================
