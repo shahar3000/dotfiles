@@ -89,6 +89,14 @@ elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
 	[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
 fi
 
+# zim's `completion` module sets `zstyle ':completion:*' menu select` (its
+# own arrow-key-navigable menu). fzf-tab's docs say this needs to be 'no' so
+# fzf-tab can capture the unambiguous prefix and take over immediately on a
+# single Tab -- without this override, zsh's native menu can engage first,
+# so a fuzzy fzf popup only shows up on a second Tab press instead of the
+# first. Must be set AFTER zim's init (sourced above) to actually win.
+zstyle ':completion:*' menu no
+
 # fzf-tab preview for `cd` completions (eza tree view; no preview for other
 # completion types)
 if command -v eza >/dev/null 2>&1; then

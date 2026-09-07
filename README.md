@@ -173,6 +173,15 @@ those character cells. `nvim/vimrc` raises `g:mwMaxMatchPriority` above
 coc's semantic token priority to fix this — if it recurs, some other
 plugin/config may be highlighting at an even higher priority.
 
+### zsh Tab needs two presses to fuzzy-search subdirectories
+
+fzf-tab is meant to take over on the first `Tab` and show a fuzzy-searchable
+list (e.g. `cd <Tab>`). zim's `completion` module sets
+`zstyle ':completion:*' menu select` (its own arrow-key menu), which can
+engage before fzf-tab does, so the fuzzy popup only shows up on a second
+`Tab`. `shell/zshrc` sets `zstyle ':completion:*' menu no` after zim loads —
+fzf-tab's own documented fix — so it wins and a single `Tab` is enough.
+
 ### Clipboard on WSL
 
 `install.sh` installs `win32yank.exe` into `~/.local/bin` as the clipboard
