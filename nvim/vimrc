@@ -132,6 +132,17 @@ Plug 'bullets-vim/bullets.vim'      " list/checkbox automation (scoped below, NO
 " so we can bind our own without <Leader>r shadowing <Leader>rn (coc-rename).
 let g:mw_no_mappings = 1
 
+" vim-mark highlights a word via matchadd(), whose default priority (-10,
+" then -1 per additional mark color -- 6 colors by default, so as low as
+" -15) loses to coc's semantic token highlighting for C/C++ identifiers
+" (function names, members, etc; enabled in coc-settings*.json), which draws
+" at priority 2048. That's why marking a function NAME does nothing visible,
+" while marking the same word inside a comment (no semantic token there)
+" works fine -- comments have nothing higher-priority competing for the
+" same character cells. Raise vim-mark above coc's semantic tokens (with
+" headroom for all 6 default palette colors) so marks always win.
+let g:mwMaxMatchPriority = 3000
+
 call plug#end()
 
 if get(g:, 'copilot_enabled', 0)

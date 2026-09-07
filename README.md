@@ -162,6 +162,17 @@ triangle separators should be.
 
 ## Troubleshooting
 
+### vim-mark (`,m`) doesn't highlight C/C++ identifiers
+
+vim-mark highlights via `matchadd()`, whose priority defaults far below
+coc's semantic token highlighting for C/C++ (function names, members, etc;
+`semanticTokens.filetypes` in `nvim/coc-settings*.json`), which wins the
+paint order and hides the mark. Marking the same word inside a *comment*
+still works, since comments have no competing semantic-token highlight at
+those character cells. `nvim/vimrc` raises `g:mwMaxMatchPriority` above
+coc's semantic token priority to fix this — if it recurs, some other
+plugin/config may be highlighting at an even higher priority.
+
 ### Clipboard on WSL
 
 `install.sh` installs `win32yank.exe` into `~/.local/bin` as the clipboard
