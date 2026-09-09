@@ -182,6 +182,19 @@ engage before fzf-tab does, so the fuzzy popup only shows up on a second
 `Tab`. `shell/zshrc` sets `zstyle ':completion:*' menu no` after zim loads —
 fzf-tab's own documented fix — so it wins and a single `Tab` is enough.
 
+### PowerShell Tab needs two presses the first time each session
+
+Unlike the zsh issue above, this isn't a keybinding conflict: PowerShell's
+own completion engine (`CommandCompletion.CompleteInput`, which both PSFzf's
+Tab handler and native completion call internally) has an expensive one-time
+cold start per process — measured on a real machine at ~110ms cold vs ~18ms
+warm for the same call. The first real Tab press of a session pays that cost
+live and looks like nothing happened, so the natural reaction is to press
+Tab again; the second press is already warm and looks like "the one that
+worked" (it isn't — it's just no longer paying the one-time cost).
+`powershell/Microsoft.PowerShell_profile.ps1` pays that cost once at profile
+load instead, so a single Tab already works the first time it's used.
+
 ### Clipboard on WSL
 
 `install.sh` installs `win32yank.exe` into `~/.local/bin` as the clipboard

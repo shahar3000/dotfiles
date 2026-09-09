@@ -43,6 +43,24 @@ function Import-LazyPSFzf {
 if (Import-Module PSReadLine -PassThru -ErrorAction SilentlyContinue) {
     Set-PSReadLineOption -EditMode Emacs -HistoryNoDuplicates
 
+    # PowerShell's own completion engine (CommandCompletion.CompleteInput,
+    # which both PSFzf's Tab handler and PowerShell's native completion call
+    # internally) has an expensive one-time cold start per process -- measured
+    # on a real machine at ~110ms cold vs ~18ms warm for the same call.
+    # Without this, the FIRST real Tab press of a session pays that cost live
+    # and looks like nothing happened, so you reach for a second press; the
+    # second press is already warm and looks like "the one that worked" --
+    # it isn't, it's just no longer paying the one-time cost. Pay that cost
+    # once here instead, so a single Tab already works the first time.
+    [void][System.Reflection.Assembly]::LoadWithPartialName("System.Management.Automation")
+    $dotfilesCompletionWarmup = [System.Management.Automation.PowerShell]::Create('CurrentRunspace')
+    try {
+        [void][System.Management.Automation.CommandCompletion]::CompleteInput("cd ", 3, @{}, $dotfilesCompletionWarmup)
+    } finally {
+        $dotfilesCompletionWarmup.Dispose()
+    }
+    Remove-Variable dotfilesCompletionWarmup
+
     # Fzf-based Tab completion: the equivalent of zsh's fzf-tab, an actual
     # fuzzy-searchable picker instead of a plain cycling menu.
     Set-PSReadLineKeyHandler -Key Tab -ScriptBlock {
