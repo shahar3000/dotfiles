@@ -177,6 +177,12 @@ endif
 " file into every repo root (which would clutter git status / risk being
 " committed). Nothing to .gitignore per-project this way.
 let g:gutentags_cache_dir = expand('~/.cache/gutentags')
+" Rebase todo files live under .git, so Gutentags otherwise treats them as
+" project buffers and starts a full-repository ctags scan before Vim can exit.
+let g:gutentags_exclude_filetypes = get(g:, 'gutentags_exclude_filetypes', [])
+if index(g:gutentags_exclude_filetypes, 'gitrebase') < 0
+	call add(g:gutentags_exclude_filetypes, 'gitrebase')
+endif
 if !isdirectory(expand('~/.cache/gutentags'))
 	call mkdir(expand('~/.cache/gutentags'), 'p', 0700)
 endif
