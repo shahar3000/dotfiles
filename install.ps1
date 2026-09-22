@@ -250,6 +250,50 @@ function Install-ManagedFile([string]$Source, [string]$Destination) {
     }
 }
 
+function Install-PowerShellProfile([string]$Source, [string]$Destination) {
+    $managedProfile = Join-Path $env:LOCALAPPDATA `
+        "dotfiles\powershell\Microsoft.PowerShell_profile.ps1"
+    Install-ManagedFile $Source $managedProfile
+
+    # Documents is commonly redirected into OneDrive, which can turn a
+    # symlink into an empty cloud placeholder. Keep only a regular, pinned
+    # loader there and put the managed link in local AppData instead.
+    $loader = @'
+# Managed by the dotfiles installer. Edit the source profile in the repository.
+$managedProfile = Join-Path $env:LOCALAPPDATA "dotfiles\powershell\Microsoft.PowerShell_profile.ps1"
+if (Test-Path -LiteralPath $managedProfile -PathType Leaf) {
+    . $managedProfile
+} else {
+    Write-Warning "The managed dotfiles PowerShell profile is missing. Re-run install.ps1."
+}
+Remove-Variable managedProfile
+'@
+
+    $existing = Get-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
+    $needsWrite = $true
+    if ($null -ne $existing) {
+        $isLink = -not [string]::IsNullOrEmpty($existing.LinkType)
+        if (-not $isLink -and -not $existing.PSIsContainer) {
+            $needsWrite = (Get-Content -LiteralPath $Destination -Raw) -ne $loader
+        }
+        if ($needsWrite) {
+            Backup-Path $Destination
+        }
+    }
+
+    if ($needsWrite) {
+        $parent = Split-Path -Parent $Destination
+        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        Write-Utf8NoBom $Destination $loader
+        Write-Info "PowerShell profile loader: $Destination -> $managedProfile"
+    }
+
+    & attrib.exe +P -U $Destination
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not pin the PowerShell profile loader: $Destination"
+    }
+}
+
 function Install-GitConfig([string]$Source, [string]$Destination) {
     $parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
@@ -588,7 +632,9 @@ Install-ManagedFile (Join-Path $RepoRoot "git\gitignore_global") (Join-Path $HOM
 Install-ManagedFile (Join-Path $RepoRoot "herdr\config.windows.toml") (Join-Path $env:APPDATA "herdr\config.toml")
 $powerShellProfile = Join-Path ([Environment]::GetFolderPath("MyDocuments")) `
     "PowerShell\Microsoft.PowerShell_profile.ps1"
-Install-ManagedFile (Join-Path $RepoRoot "powershell\Microsoft.PowerShell_profile.ps1") $powerShellProfile
+Install-PowerShellProfile `
+    (Join-Path $RepoRoot "powershell\Microsoft.PowerShell_profile.ps1") `
+    $powerShellProfile
 Install-ManagedFile (Join-Path $RepoRoot "claude\statusline.ps1") (Join-Path $HOME ".claude\statusline.ps1")
 
 $powerShellInitCache = Join-Path $env:LOCALAPPDATA "dotfiles\powershell"
