@@ -191,7 +191,19 @@ function global:ll {
     }
 }
 
+$legacyCopilotFunction = Get-Command copilot -CommandType Function -ErrorAction SilentlyContinue
+if ($null -ne $legacyCopilotFunction -and
+    $legacyCopilotFunction.Definition.Trim() -eq "agency copilot @args") {
+    Remove-Item Function:\copilot -Force
+}
+Remove-Variable legacyCopilotFunction
+
 $localProfile = Join-Path $HOME ".powershell.local.ps1"
 if (Test-Path -LiteralPath $localProfile) {
     . $localProfile
 }
+Remove-Variable `
+    DotfilesCopilotViaAgency, DotfilesHerdrCopilotViaAgency `
+    -Scope Global `
+    -ErrorAction SilentlyContinue
+Remove-Variable localProfile

@@ -99,8 +99,8 @@ The installer is idempotent and:
 2. links the Windows configuration, backing up conflicting files first;
 3. prewarms PowerShell 7's Starship and zoxide startup cache;
 4. configures Claude Code's status line without replacing other Claude settings;
-5. prompts (unless stdin is redirected) for git identity, vimwiki path, and
-   Copilot opt-in — the same untracked local files as `install.sh`;
+5. prompts (unless stdin is redirected) for git identity, vimwiki path,
+   Copilot opt-in, and, when Agency is available, system-wide Copilot routing;
 6. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
 7. installs Herdr's Claude integration;
 8. validates required commands, PowerShell modules, editor plugins, coc language
@@ -248,7 +248,11 @@ the answer in `~/.vimrc.local` (`g:copilot_enabled`). Flip that value and re-run
 the relevant installer to change your mind.
 
 On native Windows, `install.ps1` also installs the separate GitHub Copilot CLI
-through winget. CLI and editor authentication remain separate.
+through winget. When Agency is installed, it asks once whether `copilot` should
+run through `agency copilot` in PowerShell, Command Prompt, and Git Bash. The
+choice is stored in `~/.powershell.local.ps1`; rerun the installer after
+changing it. If Agency is unavailable, the installer skips this prompt and
+removes any stale routing shims. CLI and editor authentication remain separate.
 
 First use: `:Copilot setup` once inside nvim to authenticate. `<Tab>` stays
 coc's; Copilot accepts on `<C-l>`.
@@ -265,6 +269,7 @@ coc's; Copilot accepts on `<C-l>`.
 | `shell/zshrc`, `shell/zshenv` | zsh config (`zshenv` = env/PATH for all shells) |
 | `shell/zimrc` | zim module list (plugins: autosuggestions, fast-syntax-highlighting, fzf-tab, history-substring-search) |
 | `powershell/Microsoft.PowerShell_profile.ps1` | native Windows shell profile (PSReadLine, Starship, zoxide, aliases) |
+| `windows/bin/` | native Windows command shims installed ahead of user PATH entries |
 | `starship/starship.toml` | prompt config (Nerd Font icons; symlinked to `~/.config/starship.toml`) |
 | `tmux/tmux.conf` | tmux config |
 | `herdr/config.toml` | Linux/macOS herdr config — Gruvbox theme and tmux-like keys |

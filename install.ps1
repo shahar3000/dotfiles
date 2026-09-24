@@ -52,6 +52,36 @@ function Add-UserPath([string]$Path) {
     Refresh-ProcessPath
 }
 
+function Add-UserPathFirst([string]$Path) {
+    $normalized = $Path.TrimEnd("\")
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $entries = @($userPath -split ";" | Where-Object { $_ })
+    $remaining = @($entries | Where-Object {
+        $_.TrimEnd("\") -ne $normalized
+    })
+    $updated = (@($normalized) + $remaining) -join ";"
+    if ($updated -ne $userPath) {
+        [Environment]::SetEnvironmentVariable("Path", $updated, "User")
+        Write-Info "added to front of user PATH: $normalized"
+    }
+    Refresh-ProcessPath
+}
+
+function Remove-UserPath([string]$Path) {
+    $normalized = $Path.TrimEnd("\")
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $entries = @($userPath -split ";" | Where-Object { $_ })
+    $remaining = @($entries | Where-Object {
+        $_.TrimEnd("\") -ne $normalized
+    })
+    $updated = $remaining -join ";"
+    if ($updated -ne $userPath) {
+        [Environment]::SetEnvironmentVariable("Path", $updated, "User")
+        Write-Info "removed from user PATH: $normalized"
+    }
+    Refresh-ProcessPath
+}
+
 function Get-CocExtensionRoot {
     $dataHome = if ($env:COC_DATA_HOME) {
         $env:COC_DATA_HOME
@@ -291,6 +321,96 @@ Remove-Variable managedProfile
     & attrib.exe +P -U $Destination
     if ($LASTEXITCODE -ne 0) {
         throw "Could not pin the PowerShell profile loader: $Destination"
+    }
+}
+
+function Configure-CopilotAgencyRouting([string]$SourceRoot) {
+    $shimDirectory = Join-Path $env:LOCALAPPDATA "dotfiles\agency-copilot-shims"
+    $shimPaths = @(
+        (Join-Path $shimDirectory "copilot"),
+        (Join-Path $shimDirectory "copilot.cmd")
+    )
+    $agencyCommand = Get-Command agency -CommandType Application -ErrorAction SilentlyContinue
+    if ($null -eq $agencyCommand) {
+        foreach ($shimPath in $shimPaths) {
+            Remove-Item -LiteralPath $shimPath -Force -ErrorAction SilentlyContinue
+        }
+        Remove-UserPath -Path $shimDirectory
+        return
+    }
+
+    $powerShellLocal = Join-Path $HOME ".powershell.local.ps1"
+    [string]$powerShellLocalContent = if (Test-Path -LiteralPath $powerShellLocal) {
+        Get-Content -LiteralPath $powerShellLocal -Raw
+    } else {
+        ""
+    }
+    $preferencePattern = '(?m)^\s*\$global:DotfilesCopilotViaAgency\s*=\s*\$(true|false)\s*$'
+    $legacyPreferencePattern = '(?m)^\s*\$global:DotfilesHerdrCopilotViaAgency\s*=\s*\$(true|false)\s*$'
+    $preferenceMatches = [regex]::Matches($powerShellLocalContent, $preferencePattern)
+
+    if ($preferenceMatches.Count -gt 0) {
+        $preferenceMatch = $preferenceMatches[$preferenceMatches.Count - 1]
+        $copilotViaAgency = $preferenceMatch.Groups[1].Value -eq "true"
+    } else {
+        $hadLegacyPreference = [regex]::IsMatch(
+            $powerShellLocalContent,
+            $legacyPreferencePattern
+        )
+        $powerShellLocalContent = [regex]::Replace(
+            $powerShellLocalContent,
+            $legacyPreferencePattern,
+            ""
+        ).TrimEnd()
+
+        $copilotViaAgency = $false
+        if (-not [Console]::IsInputRedirected) {
+            $reply = Read-Host ">> run Copilot through Agency in every Windows shell? [y/N]"
+            if ($reply -match "^[yY]") {
+                $copilotViaAgency = $true
+            }
+        }
+
+        if (-not [string]::IsNullOrEmpty($powerShellLocalContent)) {
+            $powerShellLocalContent += "`r`n"
+        }
+        $preference = '$global:DotfilesCopilotViaAgency = $' +
+            $copilotViaAgency.ToString().ToLowerInvariant()
+        Write-Utf8NoBom $powerShellLocal (
+            $powerShellLocalContent + $preference + "`r`n"
+        )
+        if ($hadLegacyPreference) {
+            Write-Info "replaced Herdr-only Copilot preference in $powerShellLocal"
+        } else {
+            Write-Info "saved Copilot Agency preference to $powerShellLocal"
+        }
+    }
+
+    if (-not $copilotViaAgency) {
+        foreach ($shimPath in $shimPaths) {
+            Remove-Item -LiteralPath $shimPath -Force -ErrorAction SilentlyContinue
+        }
+        Remove-UserPath -Path $shimDirectory
+        return
+    }
+
+    Install-ManagedFile `
+        (Join-Path $SourceRoot "windows\bin\copilot") `
+        $shimPaths[0]
+    Install-ManagedFile `
+        (Join-Path $SourceRoot "windows\bin\copilot.cmd") `
+        $shimPaths[1]
+    Add-UserPathFirst -Path $shimDirectory
+
+    $resolvedCopilot = Get-Command copilot -CommandType Application |
+        Select-Object -First 1
+    if ($null -eq $resolvedCopilot -or
+        (Split-Path -Parent $resolvedCopilot.Source) -ne $shimDirectory) {
+        foreach ($shimPath in $shimPaths) {
+            Remove-Item -LiteralPath $shimPath -Force -ErrorAction SilentlyContinue
+        }
+        Remove-UserPath -Path $shimDirectory
+        throw "Copilot earlier on the machine PATH prevents system-wide Agency routing."
     }
 }
 
@@ -822,6 +942,8 @@ if (Get-Command herdr -ErrorAction SilentlyContinue) {
 } else {
     Write-Warn "herdr is not on PATH; its Claude integration was not installed"
 }
+
+Configure-CopilotAgencyRouting -SourceRoot $RepoRoot
 
 Assert-WorkingEnvironment -SkipPluginChecks:$SkipPlugins
 
