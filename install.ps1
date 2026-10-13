@@ -147,7 +147,7 @@ function Install-WingetPackage([string]$Id, [string]$Name) {
 }
 
 function Install-PowerShellModule([string]$Name) {
-    if (Get-Module -ListAvailable -Name $Name) {
+    if (Get-Module -ListAvailable -Refresh -Name $Name) {
         Write-Info "$Name present"
         return
     }
@@ -175,7 +175,7 @@ function Assert-WorkingEnvironment([switch]$SkipPluginChecks) {
     }
 
     foreach ($module in @("posh-git", "PSFzf")) {
-        if (-not (Get-Module -ListAvailable -Name $module)) {
+        if (-not (Get-Module -ListAvailable -Refresh -Name $module)) {
             $missing.Add("PowerShell module:$module")
         }
     }
