@@ -588,8 +588,8 @@ function Install-ManagedDirectory([string]$Source, [string]$Destination) {
     }
 }
 
-function Set-ClaudeSettings {
-    $settingsPath = Join-Path $HOME ".claude\settings.json"
+function Set-ClaudeSettings([string]$UserHome = $HOME) {
+    $settingsPath = Join-Path $UserHome ".claude\settings.json"
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $settingsPath) | Out-Null
 
     if (Test-Path -LiteralPath $settingsPath) {
@@ -612,7 +612,7 @@ function Set-ClaudeSettings {
         throw "Claude settings must contain a JSON object: $settingsPath"
     }
 
-    $statuslinePath = Join-Path $HOME ".claude\statusline.ps1"
+    $statuslinePath = Join-Path $UserHome ".claude\statusline.ps1"
     $statusLine = [pscustomobject]@{
         type = "command"
         command = "pwsh.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$statuslinePath`""
