@@ -414,6 +414,82 @@ function Configure-CopilotAgencyRouting([string]$SourceRoot) {
     }
 }
 
+function Configure-HerdrIntegration(
+    [string]$Target,
+    [string]$CommandName,
+    [string]$DisplayName,
+    [scriptblock]$PromptReader
+) {
+    $status = @(& herdr integration status 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Could not inspect Herdr integrations: $($status -join ' ')"
+        return
+    }
+
+    $stateDirectory = Join-Path $env:APPDATA "herdr"
+    $choicePath = Join-Path $stateDirectory "dotfiles-$Target-integration"
+    $statusLine = $status |
+        Where-Object { $_ -like "${Target}:*" } |
+        Select-Object -First 1
+    if (-not $statusLine) {
+        Write-Warn "Herdr integration status did not report $Target"
+        return
+    }
+    $installed = $statusLine -notlike "${Target}: not installed*"
+
+    $enabled = $null
+    if (Test-Path -LiteralPath $choicePath -PathType Leaf) {
+        $choice = (Get-Content -LiteralPath $choicePath -Raw).Trim()
+        if ($choice -in @("0", "1")) {
+            $enabled = $choice -eq "1"
+        } else {
+            Write-Warn "Invalid Herdr integration choice in $choicePath; asking again"
+        }
+    }
+
+    if ($null -eq $enabled) {
+        $enabled = $installed
+        $prompt = if ($installed) {
+            ">> keep Herdr session restore enabled for $DisplayName? [Y/n]"
+        } else {
+            ">> enable Herdr session restore for $DisplayName? [y/N]"
+        }
+        $reply = $null
+        if ($null -ne $PromptReader) {
+            $reply = & $PromptReader $prompt
+        } elseif (-not [Console]::IsInputRedirected) {
+            $reply = Read-Host $prompt
+        }
+        if (-not [string]::IsNullOrWhiteSpace($reply)) {
+            $enabled = if ($installed) {
+                $reply -notmatch "^[nN]"
+            } else {
+                $reply -match "^[yY]"
+            }
+        }
+        New-Item -ItemType Directory -Force -Path $stateDirectory | Out-Null
+        Write-Utf8NoBom $choicePath $(if ($enabled) { "1`r`n" } else { "0`r`n" })
+    }
+
+    if ($enabled) {
+        if (-not (Get-Command $CommandName -ErrorAction SilentlyContinue)) {
+            Write-Warn "$DisplayName is unavailable; the Herdr integration choice was saved and will be applied after it is installed"
+            return
+        }
+        Write-Info "wiring Herdr's $DisplayName integration"
+        & herdr integration install $Target
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "Herdr integration install failed; run 'herdr integration install $Target' manually"
+        }
+    } elseif ($installed) {
+        Write-Info "removing Herdr's $DisplayName integration"
+        & herdr integration uninstall $Target
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "Herdr integration removal failed; run 'herdr integration uninstall $Target' manually"
+        }
+    }
+}
+
 function Install-GitConfig([string]$Source, [string]$Destination) {
     $parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
@@ -935,12 +1011,14 @@ print(sysconfig.get_path('scripts', scheme='nt_user'))
 }
 
 if (Get-Command herdr -ErrorAction SilentlyContinue) {
-    & herdr integration install claude
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warn "Herdr's Claude integration failed; run 'herdr integration install claude' manually"
-    }
-} else {
-    Write-Warn "herdr is not on PATH; its Claude integration was not installed"
+    Configure-HerdrIntegration `
+        -Target "claude" `
+        -CommandName "claude" `
+        -DisplayName "Claude Code"
+    Configure-HerdrIntegration `
+        -Target "copilot" `
+        -CommandName "copilot" `
+        -DisplayName "GitHub Copilot CLI"
 }
 
 Configure-CopilotAgencyRouting -SourceRoot $RepoRoot

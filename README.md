@@ -46,11 +46,12 @@ What `install.sh` does:
    on native Linux desktops; WSL needs the font on the Windows side instead — see
    [Nerd Font on WSL / Windows Terminal](#nerd-font-on-wsl--windows-terminal))
 6. WSL only: installs `win32yank` (nvim's clipboard bridge to Windows)
-7. wires herdr's Claude Code integration
+7. optionally installs Herdr session-restore integrations for Claude Code and
+   GitHub Copilot CLI
 8. installs **zim** (zsh loader) + vim-plug + nvim/vim plugins
 9. makes **zsh** the login shell (`sudo usermod`, else a guarded `~/.bashrc` hand-off)
-10. prompts (TTY only) for git identity, vimwiki path, Copilot opt-in, and tmux
-    clipboard target
+10. prompts (TTY only) for git identity, vimwiki path, Copilot opt-in, Herdr
+    Claude/Copilot session restore, and the tmux clipboard target
 
 On first `nvim` launch, coc auto-installs `coc-clangd`/`coc-pyright`/`coc-go`.
 
@@ -100,10 +101,10 @@ The installer is idempotent and:
 3. prewarms PowerShell 7's Starship and zoxide startup cache;
 4. configures Claude Code's status line without replacing other Claude settings;
 5. prompts (unless stdin is redirected) for git identity, vimwiki path,
-   Copilot opt-in, and, when Agency is available, system-wide Copilot routing;
+   Copilot opt-in, Herdr Claude/Copilot session restore, and, when Agency is
+   available, system-wide Copilot routing;
 6. installs vim-plug, Neovim plugins, pynvim, black, and gopls;
-7. installs Herdr's Claude integration;
-8. validates required commands, PowerShell modules, editor plugins, coc language
+7. validates required commands, PowerShell modules, editor plugins, coc language
    extensions, and the markdown-preview binary before reporting success.
 
 The Windows PowerShell bootstrap installs PowerShell 7 and relaunches the setup
@@ -291,5 +292,9 @@ coc's; Copilot accepts on `<C-l>`.
 - **tmux clipboard target** is prompted by `install.sh` only (native Windows
   uses Herdr instead of tmux) and stored in `~/.tmux.local.conf`.
 - **Machine-local zsh overrides** go in `~/.zshrc.local` (untracked, sourced last).
+- **Herdr integration choices** are remembered as
+  `dotfiles-<agent>-integration` files in Herdr's local config directory. Delete
+  one to be prompted again on the next installer run; declining removes an
+  existing integration.
 - Re-run `./install.sh` (or `install.ps1` on Windows) any time — each only does
   what's missing.

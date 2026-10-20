@@ -12,12 +12,12 @@
 #   2. install Homebrew (canonical /home/linuxbrew when possible, else ~/.homebrew)
 #   3. brew install CLI tools + node + language servers
 #   3c. WSL only: install win32yank (nvim system-clipboard bridge)
-#   3d. wire herdr's Claude Code integration (pane <-> agent-session tracking)
+#   3d. optionally wire Herdr's Claude/Copilot session-restore integrations
 #   4. install zim (zsh loader); starship/fzf/zoxide come from brew
 #   5. make zsh the login shell (sudo usermod, else a guarded ~/.bashrc hand-off)
 #   6. install vim-plug + nvim plugins
 #   7. symlink dotfiles into $HOME (timestamped backups)
-#   8. prompt for git identity / vimwiki path / Copilot opt-in / tmux clipboard (TTY only)
+#   8. prompt for local preferences, including Herdr integrations (TTY only)
 #
 # Usage: ./install.sh            (full run)
 #        SKIP_PACKAGES=1 ./install.sh   (only symlink + local config; no installs)
@@ -408,21 +408,6 @@ install_win32yank() {
 		warn "win32yank download/extract failed — nvim clipboard won't work on WSL until installed manually"
 	fi
 	rm -rf "$tmp"
-}
-
-# ---------------------------------------------------------------------------
-# 3d. herdr's Claude Code integration. Writes ~/.claude/hooks/herdr-agent-state.sh
-#     (a SessionStart hook that reports the running Claude session to herdr over
-#     its socket, so it can track which pane is running which agent session) and
-#     registers that hook in ~/.claude/settings.json — which link_configs has
-#     already symlinked to this repo's claude/settings.json, so this runs after
-#     it. `herdr integration install` is idempotent (checks its embedded version
-#     against what's installed), safe to re-run every time.
-# ---------------------------------------------------------------------------
-install_herdr_integration() {
-	have herdr || return
-	info "wiring herdr's Claude Code integration"
-	herdr integration install claude || warn "herdr integration install claude failed"
 }
 
 # ---------------------------------------------------------------------------
@@ -845,6 +830,85 @@ configure_copilot() {
 	fi
 }
 
+# Herdr agent session restore hooks -> ~/.config/herdr/dotfiles-*-integration.
+# Existing integrations are adopted automatically. New choices are prompted
+# once and remembered; an enabled integration is refreshed on every run.
+configure_herdr_integration() {
+	local target="$1" command_name="$2" display_name="$3"
+
+	local state_dir="$HOME/.config/herdr"
+	local choice_file="$state_dir/dotfiles-${target}-integration"
+	local status_output="" status_line="" installed=0
+	if ! status_output="$(herdr integration status 2>&1)"; then
+		warn "could not inspect Herdr integrations: $status_output"
+		return
+	fi
+	status_line="$(printf '%s\n' "$status_output" \
+		| grep "^${target}:" | head -n 1 || true)"
+	if [ -z "$status_line" ]; then
+		warn "Herdr integration status did not report $target"
+		return
+	fi
+	case "$status_line" in
+		"${target}: not installed"*) installed=0 ;;
+		"${target}:"*) installed=1 ;;
+	esac
+
+	local enable=""
+	if [ -f "$choice_file" ]; then
+		enable="$(cat "$choice_file" 2>/dev/null || true)"
+		case "$enable" in
+			0|1) ;;
+			*)
+				warn "invalid Herdr integration choice in $choice_file; asking again"
+				enable=""
+				;;
+		esac
+	fi
+	if [ -z "$enable" ]; then
+		local reply=""
+		enable="$installed"
+		if [ -t 0 ]; then
+			if [ "$installed" = "1" ]; then
+				read -r -p ">> keep Herdr session restore enabled for $display_name? [Y/n]: " reply \
+					|| reply=""
+			else
+				read -r -p ">> enable Herdr session restore for $display_name? [y/N]: " reply \
+					|| reply=""
+			fi
+		fi
+		if [ -n "$reply" ]; then
+			if [ "$installed" = "1" ]; then
+				case "$reply" in [nN]*) enable=0 ;; *) enable=1 ;; esac
+			else
+				case "$reply" in [yY]*) enable=1 ;; *) enable=0 ;; esac
+			fi
+		fi
+		mkdir -p "$state_dir"
+		printf '%s\n' "$enable" > "$choice_file"
+	fi
+
+	if [ "$enable" = "1" ]; then
+		if ! have "$command_name"; then
+			warn "$display_name is unavailable; the Herdr integration choice was saved and will be applied after it is installed"
+			return
+		fi
+		info "wiring Herdr's $display_name integration"
+		herdr integration install "$target" \
+			|| warn "Herdr integration install $target failed"
+	elif [ "$installed" = "1" ]; then
+		info "removing Herdr's $display_name integration"
+		herdr integration uninstall "$target" \
+			|| warn "Herdr integration uninstall $target failed"
+	fi
+}
+
+configure_herdr_integrations() {
+	have herdr || return
+	configure_herdr_integration claude claude "Claude Code"
+	configure_herdr_integration copilot copilot "GitHub Copilot CLI"
+}
+
 # map a clipboard target name -> the external command tmux pipes copies to.
 # (osc52 and none are handled specially in configure_tmux_clipboard, not here.)
 clipboard_cmd_for() {
@@ -918,7 +982,6 @@ main() {
 	configure_claude_settings
 	install_font
 	install_win32yank
-	install_herdr_integration
 	install_zim
 	install_vim_plugins    # after link_configs so nvim sees its config
 	set_default_shell
@@ -927,6 +990,7 @@ main() {
 	configure_git_identity
 	configure_vimwiki
 	configure_copilot        # after configure_vimwiki — see its comment
+	configure_herdr_integrations
 	configure_tmux_clipboard
 
 	echo
