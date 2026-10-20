@@ -276,7 +276,7 @@ coc's; Copilot accepts on `<C-l>`.
 | `herdr/config.windows.toml` | native Windows Herdr config — PowerShell 7 through ConPTY |
 | `git/gitconfig` | git config + delta |
 | `git/gitignore_global` | global gitignore (symlinked to `~/.gitignore` via `core.excludesfile`) — tags, editor/OS cruft |
-| `claude/settings.json` | Claude Code settings (portable subset; use your own Anthropic account) |
+| `claude/settings.json` | Unix Claude Code settings merged into the mutable local settings file |
 | `claude/statusline.sh` | custom statusline (symlinked to `~/.claude/statusline.sh`; needs `jq`) |
 | `claude/statusline.ps1` | native Windows Claude Code status line |
 | `install.ps1` | idempotent native Windows provisioning and configuration |

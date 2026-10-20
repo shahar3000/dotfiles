@@ -698,13 +698,93 @@ link_configs() {
 	link "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 	link "$DOTFILES/git/gitignore_global"    "$HOME/.gitignore"   # global gitignore (gitconfig core.excludesfile)
 	link "$DOTFILES/git/gitconfig"           "$HOME/.gitconfig"
-	link "$DOTFILES/claude/settings.json"    "$HOME/.claude/settings.json"
 	link "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
 }
 
 # ---------------------------------------------------------------------------
 # 8. interactive machine-local config (TTY only; skipped/defaulted under pipes)
 # ---------------------------------------------------------------------------
+
+# Merge the portable tracked Claude settings into a mutable machine-local file.
+# Herdr and other tools can then add hooks without modifying the repository.
+configure_claude_settings() {
+	local source="$DOTFILES/claude/settings.json"
+	local destination="$HOME/.claude/settings.json"
+	mkdir -p "$(dirname "$destination")"
+
+	if ! have python3; then
+		local temporary="$destination.tmp.$$"
+		if [ -L "$destination" ]; then
+			if cat "$destination" > "$temporary" && mv "$temporary" "$destination"; then
+				info "converted $destination from a repo symlink to a local file"
+			else
+				rm -f "$temporary"
+				warn "could not migrate $destination"
+			fi
+		elif [ ! -e "$destination" ]; then
+			if cp "$source" "$temporary" && mv "$temporary" "$destination"; then
+				info "created $destination"
+			else
+				rm -f "$temporary"
+				warn "could not create $destination"
+			fi
+		else
+			warn "python3 unavailable; portable Claude settings were not refreshed"
+		fi
+		return
+	fi
+
+	if python3 - "$source" "$destination" <<'PY'
+import json
+import os
+import pathlib
+import sys
+import tempfile
+
+source_path = pathlib.Path(sys.argv[1])
+destination_path = pathlib.Path(sys.argv[2])
+portable = json.loads(source_path.read_text(encoding="utf-8"))
+if destination_path.exists() or destination_path.is_symlink():
+    settings = json.loads(destination_path.read_text(encoding="utf-8") or "{}")
+else:
+    settings = {}
+if not isinstance(settings, dict):
+    raise TypeError(f"{destination_path} must contain a JSON object")
+
+def merge(local, managed):
+    result = dict(local)
+    for key, value in managed.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+settings = merge(settings, portable)
+temporary = None
+try:
+    descriptor, temporary = tempfile.mkstemp(
+        dir=destination_path.parent,
+        prefix=f".{destination_path.name}.",
+        suffix=".tmp",
+    )
+    with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+        json.dump(settings, output, indent=2)
+        output.write("\n")
+        output.flush()
+        os.fsync(output.fileno())
+    os.replace(temporary, destination_path)
+    temporary = None
+finally:
+    if temporary is not None:
+        pathlib.Path(temporary).unlink(missing_ok=True)
+PY
+	then
+		info "configured portable Claude settings in $destination"
+	else
+		warn "could not merge portable Claude settings into $destination"
+	fi
+}
 
 # git identity -> ~/.gitconfig.local (untracked; pulled in via [include] in the
 # tracked gitconfig). NOT `--global`: ~/.gitconfig is a symlink to the tracked
@@ -835,6 +915,7 @@ main() {
 	install_prereqs
 	install_brew
 	install_tools
+	configure_claude_settings
 	install_font
 	install_win32yank
 	install_herdr_integration
