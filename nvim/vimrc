@@ -150,6 +150,7 @@ if get(g:, 'copilot_enabled', 0)
     lua << EOF
 pcall(function()
   require('CopilotChat').setup({
+    model = 'gpt-6-luna',
     mappings = {
       reset = {
         normal = '<C-_>',
