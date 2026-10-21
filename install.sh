@@ -830,9 +830,9 @@ configure_copilot() {
 	fi
 }
 
-# Herdr agent session restore hooks -> ~/.config/herdr/dotfiles-*-integration.
-# Existing integrations are adopted automatically. New choices are prompted
-# once and remembered; an enabled integration is refreshed on every run.
+# Herdr session-restore choices -> ~/.config/herdr/dotfiles-*-integration.
+# Unsaved choices are prompted on a TTY, defaulting to the installed state.
+# Choices are remembered; enabled integrations are refreshed on every run.
 configure_herdr_integration() {
 	local target="$1" command_name="$2" display_name="$3"
 
