@@ -439,7 +439,10 @@ function Configure-HerdrIntegration(
 
     $enabled = $null
     if (Test-Path -LiteralPath $choicePath -PathType Leaf) {
-        $choice = (Get-Content -LiteralPath $choicePath -Raw).Trim()
+        $choice = Get-Content -LiteralPath $choicePath -Raw
+        if ($null -ne $choice) {
+            $choice = $choice.Trim()
+        }
         if ($choice -in @("0", "1")) {
             $enabled = $choice -eq "1"
         } else {
