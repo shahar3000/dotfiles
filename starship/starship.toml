@@ -43,6 +43,7 @@ symbol = " "                # nf-fa-code_branch
 style = "purple bold"
 
 [git_status]
+use_git_executable = true
 style = "red"
 # Drop starship's default literal [ ] wrapper (default is '([\[$all_status$ahead_behind\]]($style) )').
 # The brackets forced a dangling edge-space next to ] since states have no separator; without them
