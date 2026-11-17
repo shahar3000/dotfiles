@@ -168,7 +168,12 @@ Register-ArgumentCompleter -Native -CommandName git, git.exe -ScriptBlock {
 $env:FZF_DEFAULT_OPTS = "--bind=ctrl-d:preview-page-down,ctrl-u:preview-page-up"
 
 function global:vim { nvim @args }
-function global:reprofile { . $PROFILE }
+function global:reprofile {
+    $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $env:Path = (@($machinePath, $userPath) | Where-Object { $_ }) -join ";"
+    . $PROFILE
+}
 
 # PowerShell's built-in `ls` is an ALIAS to Get-ChildItem, and aliases take
 # precedence over functions of the same name -- defining `function ls` alone
