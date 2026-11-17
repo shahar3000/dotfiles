@@ -207,8 +207,4 @@ $localProfile = Join-Path $HOME ".powershell.local.ps1"
 if (Test-Path -LiteralPath $localProfile) {
     . $localProfile
 }
-Remove-Variable `
-    DotfilesCopilotViaAgency, DotfilesHerdrCopilotViaAgency `
-    -Scope Global `
-    -ErrorAction SilentlyContinue
 Remove-Variable localProfile
