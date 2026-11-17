@@ -1,4 +1,5 @@
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 $tokens = $null
 $parseErrors = $null
 $ast = [System.Management.Automation.Language.Parser]::ParseFile(
@@ -20,7 +21,10 @@ function Write-Info($Message) {}
 function Write-Warn($Message) { $script:Warnings += $Message }
 function herdr {
     $global:LASTEXITCODE = 0
-    if ($args[1] -eq "status") { "copilot: not installed" }
+    if ($args[1] -eq "status") {
+        if ($script:Installed) { "copilot: installed" }
+        else { "copilot: not installed" }
+    }
     else { $script:Operations += ($args -join " ") }
 }
 
@@ -31,6 +35,7 @@ try {
     $env:APPDATA = $testRoot
     $choicePath = Join-Path $testRoot "herdr\dotfiles-copilot-integration"
     New-Item -ItemType Directory -Path (Split-Path $choicePath -Parent) | Out-Null
+    $script:Installed = $false
     foreach ($content in @("", " `r`n")) {
         Write-Utf8NoBom $choicePath $content
         $script:Warnings = @()
@@ -40,6 +45,9 @@ try {
             -DisplayName Copilot -PromptReader {
                 param($Prompt)
                 $script:Prompts++
+                if ($Prompt -cne ">> enable Herdr session restore for Copilot? [y/N]") {
+                    throw "The enable prompt must include the display name"
+                }
                 "y"
             }
         if ($script:Warnings.Count -ne 1 -or
@@ -53,6 +61,26 @@ try {
         }
     }
     "Herdr empty and whitespace-only choice recovery passed"
+
+    Remove-Item -LiteralPath $choicePath
+    $script:Installed = $true
+    $script:Operations = @()
+    $script:Prompts = 0
+    Configure-HerdrIntegration -Target copilot -CommandName Get-Item `
+        -DisplayName Copilot -PromptReader {
+            param($Prompt)
+            $script:Prompts++
+            if ($Prompt -cne ">> keep Herdr session restore enabled for Copilot? [Y/n]") {
+                throw "The keep prompt must include the display name"
+            }
+            "y"
+        }
+    if ($script:Prompts -ne 1 -or
+        ($script:Operations -join ",") -ne "integration install copilot" -or
+        (Get-Content -LiteralPath $choicePath -Raw).Trim() -ne "1") {
+        throw "An installed integration should be prompted, saved, and retained"
+    }
+    "Herdr installed integration prompt passed"
 } finally {
     $env:APPDATA = $originalAppData
     Remove-Item -LiteralPath $testRoot -Recurse -Force

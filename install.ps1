@@ -453,9 +453,9 @@ function Configure-HerdrIntegration(
     if ($null -eq $enabled) {
         $enabled = $installed
         $prompt = if ($installed) {
-            ">> keep Herdr session restore enabled for $DisplayName? [Y/n]"
+            ">> keep Herdr session restore enabled for ${DisplayName}? [Y/n]"
         } else {
-            ">> enable Herdr session restore for $DisplayName? [y/N]"
+            ">> enable Herdr session restore for ${DisplayName}? [y/N]"
         }
         $reply = $null
         if ($null -ne $PromptReader) {
