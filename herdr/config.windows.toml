@@ -17,6 +17,7 @@ blue = "#458588"
 
 [keys]
 split_vertical = "prefix+|"
+focus_agent = "prefix+alt+1..9"
 
 [ui]
 agent_panel_sort = "spaces"
